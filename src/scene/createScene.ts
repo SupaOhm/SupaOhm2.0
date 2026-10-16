@@ -27,7 +27,10 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
   const camera = new PerspectiveCamera(FOV, 1, 0.1, 100);
   camera.position.z = CAMERA_Z;
   const pmrem = new PMREMGenerator(renderer);
-  const env = pmrem.fromScene(new RoomEnvironment(), 0.04);
+  const room = new RoomEnvironment();
+  const env = pmrem.fromScene(room, 0.04);
+  room.dispose();
+  pmrem.dispose();
   scene.environment = env.texture;
 
   const background = createBackground();
@@ -233,7 +236,6 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
       look.material.dispose();
       background.dispose();
       env.dispose();
-      pmrem.dispose();
       renderer.dispose();
     },
   };
