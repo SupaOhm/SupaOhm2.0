@@ -10,6 +10,7 @@ import { BASE, PALETTE, STATE_COUNT } from './palette';
 import { createPictures } from './pictures';
 import { POSITION_SPRING, SWELL_SPRING, createSpring } from './springs';
 import { stepState } from './step';
+import { nextPixelRatio } from './watchdog';
 import type { SceneHandle, SceneItem, SceneOptions, Theme } from './types';
 
 const WHITE = new Color('#ffffff');
@@ -18,7 +19,8 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
   if (items.length !== STATE_COUNT) throw new Error(`createScene expects ${STATE_COUNT} items, got ${items.length}`);
 
   const renderer = new WebGLRenderer({ canvas, antialias: true }); // throws when WebGL is unavailable
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  let pixelRatio = Math.min(window.devicePixelRatio, 2);
+  renderer.setPixelRatio(pixelRatio);
   renderer.toneMapping = ACESFilmicToneMapping;
 
   const scene = new Scene();
@@ -67,6 +69,8 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
   let raf = 0;
   let last = 0;
   let time = 0;
+  let frames = 0;
+  let frameSum = 0;
 
   function resize() {
     const w = canvas.clientWidth || window.innerWidth;
@@ -167,6 +171,19 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
     const dt = last ? Math.min((now - last) / 1000, 0.1) : 0;
     last = now;
     time += dt;
+    if (dt > 0) {
+      frameSum += dt;
+      if (++frames === 60) {
+        const next = nextPixelRatio(pixelRatio, frameSum / 60);
+        if (next !== pixelRatio) {
+          pixelRatio = next;
+          renderer.setPixelRatio(next);
+          resize();
+        }
+        frames = 0;
+        frameSum = 0;
+      }
+    }
     render(time, dt);
   }
 
