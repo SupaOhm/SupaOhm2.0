@@ -2269,9 +2269,9 @@ describe('layout', () => {
     expect(placement(1, 'centered')).toEqual({ side: 0, y: 0, fit: 1 });
   });
 
-  it('shrinks the object on short, wide viewports', () => {
-    expect(placement(1440 / 500, 'wide').fit).toBe(1);
-    expect(placement(3.6, 'wide').fit).toBeLessThanOrEqual(1);
+  it('wide: shrinks the object when the window is tall and narrow', () => {
+    // 800×1000: 4.54 world units across, so 42% of that fits only about half the object
+    expect(placement(800 / 1000, 'wide').fit).toBeCloseTo(0.515, 2);
   });
 });
 ```
