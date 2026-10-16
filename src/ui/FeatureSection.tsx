@@ -13,7 +13,7 @@ export function FeatureSection({ item, anchor, groupStart }: { item: FeaturedIte
       <div className="copy">
         {groupStart && <h2 className="group">{item.group}</h2>}
         <h3 className="title" id={`${item.id}-title`}>
-          {item.title}
+          {item.title.replaceAll('-', '\u2011')}
         </h3>
         <p className="meta">{item.meta}</p>
         {item.body.map((text) => (

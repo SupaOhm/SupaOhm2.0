@@ -20,7 +20,7 @@ describe('App', () => {
       screen
         .getAllByRole('heading', { level: 3 })
         .slice(0, 5)
-        .map((h) => h.textContent),
+        .map((h) => h.textContent?.replaceAll('\u2011', '-')),
     ).toEqual(['ESNIDSaaS', 'MA-ZeroPhish', 'Mizuhada Group', 'Baka Co.', 'AckLab']);
   });
 
