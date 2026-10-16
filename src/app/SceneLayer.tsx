@@ -16,6 +16,8 @@ function readForcedProgress(search: string): number | null {
   return Number.isFinite(p) ? p : null;
 }
 
+const clampState = (p: number, count: number) => Math.min(Math.max(Math.round(p), 0), count - 1);
+
 export function SceneLayer({ items, theme, capture = false }: { items: SceneItem[]; theme: Theme; capture?: boolean }) {
   const mode = useMemo(detectSceneMode, []);
   const reduced = usePrefersReducedMotion();
@@ -28,7 +30,7 @@ export function SceneLayer({ items, theme, capture = false }: { items: SceneItem
   const themeRef = useRef(theme);
   const [status, setStatus] = useState<Status>(mode === 'static' ? 'static' : 'loading');
   const [generation, setGeneration] = useState(0);
-  const [fallbackState, setFallbackState] = useState(Math.round(forcedP ?? 0));
+  const [fallbackState, setFallbackState] = useState(clampState(forcedP ?? 0, items.length));
 
   useEffect(() => {
     themeRef.current = theme;
@@ -55,6 +57,7 @@ export function SceneLayer({ items, theme, capture = false }: { items: SceneItem
       handleRef.current?.dispose();
       handleRef.current = null;
       setStatus('loading');
+      window.clearTimeout(restoreTimer);
       restoreTimer = window.setTimeout(() => toStatic('WebGL context lost'), RESTORE_WAIT_MS);
     };
     const onRestored = () => {
@@ -103,9 +106,9 @@ export function SceneLayer({ items, theme, capture = false }: { items: SceneItem
       handleRef.current?.setProgress(s.p);
       handleRef.current?.setActive(activeRef.current);
       if (layerRef.current) layerRef.current.style.opacity = String(1 - s.exit);
-      setFallbackState(Math.round(s.p));
+      setFallbackState(clampState(s.p, items.length));
     },
-    [capture],
+    [capture, items.length],
   );
   useScrollProgress(onSample, capture ? null : forcedP);
 
