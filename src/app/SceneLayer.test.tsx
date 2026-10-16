@@ -130,10 +130,32 @@ describe('SceneLayer', () => {
       act(() => {
         canvas.dispatchEvent(new Event('webglcontextrestored'));
       });
-      vi.useRealTimers();
       expect(scene.querySelector('canvas')).not.toBe(canvas);
+      act(() => {
+        vi.advanceTimersByTime(3000);
+      });
+      expect(scene).not.toHaveAttribute('data-status', 'static');
+      vi.useRealTimers();
       await waitFor(() => expect(createScene).toHaveBeenCalledTimes(2));
       expect(scene).not.toHaveAttribute('data-status', 'static');
+    });
+
+    it('keeps no stray fallback timer after repeated losses followed by a restore', async () => {
+      const { canvas, scene } = await mountReady();
+      vi.useFakeTimers();
+      act(() => {
+        canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+        canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+      });
+      act(() => {
+        canvas.dispatchEvent(new Event('webglcontextrestored'));
+      });
+      act(() => {
+        vi.advanceTimersByTime(3000);
+      });
+      expect(scene).not.toHaveAttribute('data-status', 'static');
+      vi.useRealTimers();
+      await waitFor(() => expect(createScene).toHaveBeenCalledTimes(2));
     });
   });
 });
