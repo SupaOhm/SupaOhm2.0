@@ -1,7 +1,10 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { App } from './App';
+
+// jsdom has no WebGL: render the page with still images instead of the scene
+vi.mock('./capability', () => ({ detectSceneMode: () => 'static' }));
 
 describe('App', () => {
   it('lays sections out in CV order', () => {

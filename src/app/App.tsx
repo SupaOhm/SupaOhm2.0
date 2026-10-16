@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { about } from '../content/about';
 import { featured } from '../content/featured';
 import { profile } from '../content/profile';
@@ -9,12 +10,19 @@ import { Hero } from '../ui/Hero';
 import { MoreProjects } from '../ui/MoreProjects';
 import { ProjectRows } from '../ui/ProjectRows';
 import { TopBar } from '../ui/TopBar';
+import { SceneLayer } from './SceneLayer';
+import { SCENE_ITEMS } from './sceneItems';
 import { useTheme } from './theme';
 
 export function App() {
   const { theme, toggle } = useTheme();
+  // ?capture=1 renders only the centred object, for scripts/capture.mjs
+  const capture = useMemo(() => new URLSearchParams(window.location.search).has('capture'), []);
+  if (capture) return <SceneLayer items={SCENE_ITEMS} theme={theme} capture />;
+
   return (
     <>
+      <SceneLayer items={SCENE_ITEMS} theme={theme} />
       <TopBar name={profile.name} theme={theme} onToggleTheme={toggle} />
       <main>
         <Hero profile={profile} />
