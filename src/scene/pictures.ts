@@ -47,6 +47,7 @@ export function createPictures(planes: PlaneSpec[], pics: ScenePic[], label: str
       fragmentShader: FRAG,
     });
     const mesh = new Mesh(new PlaneGeometry(1, 1), material);
+    mesh.renderOrder = 1; // always after the object: in lite mode both are transparent and depth-sorting can put the screen first
     mesh.position.set(...plane.pos);
     mesh.rotation.set(...plane.rot);
     mesh.scale.set(plane.size[0], plane.size[1], 1);

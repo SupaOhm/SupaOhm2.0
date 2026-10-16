@@ -15,3 +15,15 @@ it('makes no planes for an object without screens', () => {
   expect(set.group.visible).toBe(false);
   set.dispose();
 });
+
+it('draws pictures after the object so the screen face never covers them', () => {
+  const set = createPictures(
+    [{ pos: [0, 0, -0.5], rot: [0, 0, 0], size: [1.6, 1], pic: 0 }],
+    [{ src: '/shots/baka.webp' }],
+    'Baka Co.',
+    1,
+  );
+  expect(set.group.children).toHaveLength(1);
+  expect(set.group.children[0].renderOrder).toBe(1);
+  set.dispose();
+});
