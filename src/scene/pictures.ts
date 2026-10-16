@@ -107,6 +107,7 @@ export function createPictures(planes: PlaneSpec[], pics: ScenePic[], label: str
 function tileTexture(aspect: number, lines: string[]): CanvasTexture {
   const h = 512;
   const w = Math.round(h * aspect);
+  const shorter = Math.min(w, h);
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
@@ -119,7 +120,7 @@ function tileTexture(aspect: number, lines: string[]): CanvasTexture {
     lines.forEach((line, i) => {
       const first = i === 0;
       ctx.fillStyle = first ? '#F5F5F7' : '#A1A1A6';
-      ctx.font = `${first ? 800 : 600} ${Math.round(h * (first ? 0.075 : 0.05))}px "Inter Tight", system-ui, sans-serif`;
+      ctx.font = `${first ? 800 : 600} ${Math.round(shorter * (first ? 0.075 : 0.05))}px "Inter Tight", system-ui, sans-serif`;
       ctx.fillText(line, w / 2, h / 2 + (i - (lines.length - 1) / 2) * h * 0.1, w * 0.86);
     });
   }
