@@ -8,5 +8,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}', 'tests/**/*.test.ts'],
+    // Node 22.4+ has its own localStorage global, which clashes with jsdom's and prints a warning; turn it off where it exists
+    execArgv: process.allowedNodeEnvironmentFlags.has('--experimental-webstorage') ? ['--no-experimental-webstorage'] : [],
   },
 });
