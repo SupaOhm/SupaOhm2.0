@@ -22,7 +22,7 @@
 - No phone number anywhere on the site. No availability or "open to work" claim. No status badges.
 - Section headings are plain words ("Research", "Experience", "Projects"). Never use all-caps eyebrow labels.
 - Type: Inter Tight, self-hosted through `@fontsource/inter-tight` (weights 500, 600 and 800, latin subset). No Google Fonts request. Headings use weight 800 and -0.035em tracking (never tighter: it merges "rn" into "m"). Hero clamp(64px, 10vw, 164px). Section titles clamp(48px, 6vw, 96px). Body 19px/1.5, weight 500.
-- Light theme: background `#F5F5F7`, ink `#1D1D1F`, dim `#6E6E73`. Dark theme: background `#000000`, ink `#F5F5F7`, dim `#A1A1A6`.
+- Light theme: background `#F5F5F7`, ink `#1D1D1F`, dim `#515154` (darkened from `#6E6E73` after review: about 5:1 contrast over the colour wash). Dark theme: background `#000000`, ink `#F5F5F7`, dim `#A1A1A6`.
 - The theme defaults to the system preference. A toggle overrides it. Every `localStorage` access is wrapped in try/catch.
 - Text sections scroll normally (never sticky). Each is about 130vh on wide screens. Text alternates sides, and the object sits opposite.
 - Narrow layout means a viewport under 800px wide. There, each object section reserves its top 55vh for the object.

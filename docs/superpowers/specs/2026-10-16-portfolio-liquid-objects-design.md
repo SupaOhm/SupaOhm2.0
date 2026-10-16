@@ -53,7 +53,7 @@ Section headings are plain words ("Research", "Experience", "Projects"), never a
 
 - **Type:** Inter Tight, self-hosted as woff2 (weights 500, 600 and 800). No Google Fonts request. Headings use weight 800 with -0.035em tracking (tighter tracking merges "rn" into "m"). Hero size clamp(64px, 10vw, 164px). Section titles clamp(48px, 6vw, 96px). Body 19px/1.5, weight 500.
 - **Themes:**
-  - Light: background `#F5F5F7`, ink `#1D1D1F`, dim `#6E6E73`.
+  - Light: background `#F5F5F7`, ink `#1D1D1F`, dim `#515154` (darkened from `#6E6E73` for WCAG AA contrast over the colour wash).
   - Dark: background `#000000`, ink `#F5F5F7`, dim `#A1A1A6`.
 - **Per-section light colours:** each section has a glow/bar colour and a wash colour, blended during transitions. Light and dark palettes are taken from the prototype's `PAL`.
 - **Layout:** text sections are about 130vh tall and scroll normally (never sticky). Text alternates left and right, and the object sits on the opposite side.
