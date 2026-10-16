@@ -15,6 +15,7 @@ describe('createScene', () => {
 
   it('throws when WebGL is unavailable, so the caller can show still images', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null); // no WebGL, as on an unsupported device
     expect(() => createScene(document.createElement('canvas'), items, opts)).toThrow();
   });
 });
