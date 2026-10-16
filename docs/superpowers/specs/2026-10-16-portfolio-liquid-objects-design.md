@@ -28,7 +28,7 @@ The approved reference prototype is `.superpowers/brainstorm/proto-liquid.html`.
 | 3 | Experience: AI Developer Intern, Mizuhada Group (Jun–Jul 2026) | laptop | "Built an enterprise multi-agent RAG assistant for company knowledge and live warehouse inventory." Public facts only: document lookup time down 91.3% (54.54 s to 4.728 s), 100% source matching in evaluation, warehouse access restricted to 12 read-only query tools. The screen shows a mock or blurred UI that the owner supplies, never real company data. |
 | 4 | Experience: UX/UI Research & Design Intern, Baka Co. (Aug 2025 onward) | frame | Baka Index redesign of a farming analytics platform on Google Earth Engine, from stakeholder research to high-fidelity mockups. |
 | 5 | Projects: AckLab | tablet | An interactive networking learning platform. GitHub link. |
-| 6 | Projects list, More projects | sphere (small) | The sphere sits beside the Projects heading, then fades out as the About block begins. About and Contact have no 3D. See below. |
+| 6 | Projects list, More projects | sphere (small) | The sphere sits beside the project list, then fades out as the More projects list begins, so no list text sits under it. More projects, About and Contact have no 3D. See below. |
 
 Section headings are plain words ("Research", "Experience", "Projects"), never all-caps eyebrow labels.
 
