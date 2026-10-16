@@ -19,7 +19,7 @@ function filesUnder(dir: string): string[] {
 }
 
 const shipped = [...filesUnder(join(ROOT, 'src')), ...filesUnder(join(ROOT, 'public')), join(ROOT, 'index.html')];
-const textFiles = shipped.filter((f) => TEXT.has(extname(f)));
+const shippedText = shipped.filter((f) => TEXT.has(extname(f)));
 const repoFiles = [
   ...shipped,
   ...['docs', 'scripts', 'tests'].flatMap((d) => filesUnder(join(ROOT, d))),
@@ -30,6 +30,10 @@ const repoFiles = [
 // it is matched by the SHA-256 of its lower-case letters (6 characters long).
 const BANNED_SHA256 = '1c14bf04c4b3c259593b8139f4e8586a7ec883fa73dc5bacfc4a3fe9088caaf8';
 const BANNED_LENGTH = 6;
+// The owner's phone number is never written in this repo either: it is matched by the SHA-256
+// of its 9 national digits (without the leading 0).
+const PHONE_SHA256 = '44956d60dbab3f14459c6be74711530b0895578d34798b6f6fab39347d3a413b';
+const PHONE_LENGTH = 9;
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
 /** True if the text, lower-cased with everything but letters and digits removed, contains a run hashing to `hash`. */
@@ -58,9 +62,13 @@ describe('repository files', () => {
   });
 
   it('never show a phone number', () => {
-    const phone = /\+\s*\(?66/;
-    for (const file of textFiles) {
-      expect(phone.test(readFileSync(file, 'utf8')), relative(ROOT, file)).toBe(false);
+    for (const file of repoFiles) {
+      if (!TEXT.has(extname(file)) && extname(file) !== '.mjs') continue;
+      const rel = relative(ROOT, file);
+      expect(containsHashed(readFileSync(file, 'utf8'), PHONE_SHA256, PHONE_LENGTH), rel).toBe(false);
+    }
+    for (const file of shippedText) {
+      expect(/\+\s*\(?66/.test(readFileSync(file, 'utf8')), relative(ROOT, file)).toBe(false);
     }
   });
 });
