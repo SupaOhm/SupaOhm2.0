@@ -19,7 +19,7 @@ const screenPlane = () => {
 };
 
 /** Half-width of the band (in box Y) over which screen and base blend into a rounded hinge. */
-const HINGE = 0.06;
+const HINGE = 0.18;
 
 const mapScreen = (X: number, Y: number, Z: number): [number, number, number] => {
   const h = Y * LAP.S;
