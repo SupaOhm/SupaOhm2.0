@@ -2569,8 +2569,11 @@ describe('shapes', () => {
     expect(Math.max(...ys)).toBeCloseTo(READER.H, 1);
   });
 
+  // sample along the hinge/spine but never at its centre: (0, ±ε, 0) normalizes to a pole, not the hinge
+  const ALONG = [-0.9, -0.5, -0.1, 0.3, 0.7];
+
   it('laptop: screen and base meet at the hinge', () => {
-    for (let x = -0.9; x <= 0.9; x += 0.3) {
+    for (const x of ALONG) {
       for (const z of [-0.4, 0, 0.4]) {
         const up = OBJECTS.laptop.shape(...unit(x, 1e-4, z));
         const down = OBJECTS.laptop.shape(...unit(x, -1e-4, z));
@@ -2580,7 +2583,7 @@ describe('shapes', () => {
   });
 
   it('book: the two pages meet at the spine', () => {
-    for (let y = -0.9; y <= 0.9; y += 0.3) {
+    for (const y of ALONG) {
       for (const z of [-0.4, 0, 0.4]) {
         expect(dist(book.shape(...unit(1e-4, y, z)), book.shape(...unit(-1e-4, y, z)))).toBeLessThan(0.01);
       }
