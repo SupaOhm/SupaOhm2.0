@@ -13,6 +13,8 @@ npm run capture:fallback  # with preview running: regenerate public/fallback sti
 npm run capture:review    # with preview running: screenshots of every state into review/
 ```
 
+`scripts/capture.mjs` reads `CHROME` (path to the Chrome binary; default is the macOS path) and `BASE_URL` (default `http://127.0.0.1:4173/`).
+
 Preview any state with URL parameters: `?p=3&theme=dark`, plus `&scene=full|lite|static` to force a renderer.
 
 ## Replacing a placeholder screenshot
@@ -23,3 +25,7 @@ Preview any state with URL parameters: `?p=3&theme=dark`, plus `&scene=full|lite
 4. Run `npm run build`, start `npm run preview`, then run `npm run capture:fallback` and commit the new stills.
 
 The Mizuhada screen must be a mock or a blurred UI, with no real company data and no internal product names. An item with exactly two pictures is shown as an open book, one picture per page.
+
+## Deploy
+
+Vercel's Vite preset works as-is: build command `npm run build`, output directory `dist`.
