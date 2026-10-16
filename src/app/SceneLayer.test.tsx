@@ -140,7 +140,7 @@ describe('SceneLayer', () => {
       expect(scene).not.toHaveAttribute('data-status', 'static');
     });
 
-    it('keeps no stray fallback timer after repeated losses followed by a restore', async () => {
+    it('falls back and warns once when the context is lost twice without a restore', async () => {
       const { canvas, scene } = await mountReady();
       vi.useFakeTimers();
       act(() => {
@@ -148,14 +148,10 @@ describe('SceneLayer', () => {
         canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
       });
       act(() => {
-        canvas.dispatchEvent(new Event('webglcontextrestored'));
-      });
-      act(() => {
         vi.advanceTimersByTime(3000);
       });
-      expect(scene).not.toHaveAttribute('data-status', 'static');
-      vi.useRealTimers();
-      await waitFor(() => expect(createScene).toHaveBeenCalledTimes(2));
+      expect(scene).toHaveAttribute('data-status', 'static');
+      expect(console.warn).toHaveBeenCalledTimes(1);
     });
   });
 });
