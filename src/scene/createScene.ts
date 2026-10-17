@@ -274,6 +274,8 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
       arrive = a;
     },
     setActive(a) {
+      // no frames run while hidden: come back already at the scroll position, so the contact phone arrives formed
+      if (a && !active) primed = false;
       active = a;
       if (a) start();
       else stop();

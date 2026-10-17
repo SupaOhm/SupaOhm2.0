@@ -371,6 +371,7 @@ p {
   .about[data-mode='rail'] .about-track {
     overflow-x: auto;
     scroll-snap-type: x mandatory;
+    scroll-padding-inline: 24px; /* snap panels to the page gutter, not the screen edge */
     scrollbar-width: none;
     margin: 0 -24px;
     padding: 0 24px;

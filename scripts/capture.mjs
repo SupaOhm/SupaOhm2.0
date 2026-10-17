@@ -4,6 +4,7 @@
 //                                        (manual review, git-ignored)
 //   node scripts/capture.mjs meta      → public/og.png, public/favicon-32.png, public/apple-touch-icon.png
 //                                        (run after fallback: they are cut from the hero pebble still)
+//   node scripts/capture.mjs sections  → review/sections-<size>-<theme>-<label>.png (scrolled views of the lower parts)
 import { spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -110,9 +111,51 @@ function ogHtml() {
   </body></html>`;
 }
 
+/** Scrolls so that the page-space y given by `expr` (a JS expression) is the top of the viewport. */
+const scrollTo = (page, expr) =>
+  page.send('Runtime.evaluate', { expression: `window.scrollTo({ top: ${expr}, behavior: 'instant' })` });
+
+const aboutAt = (f) =>
+  `(() => { const r = document.querySelector('#about').getBoundingClientRect(); return scrollY + r.top + Math.max(0, r.height - innerHeight) * ${f}; })()`;
+
+// scrollY at which the contact phone's arrival is f (0..1): arrive = (scrollY + vh - contactTop) / vh
+const contactAt = (f) =>
+  `scrollY + document.querySelector('#contact').getBoundingClientRect().top - innerHeight * ${1 - f}`;
+
+// the lower parts, in page order; each run() leaves the page ready for a screenshot
+const SECTION_SHOTS = [
+  {
+    label: 'projects-heading',
+    run: (page) =>
+      scrollTo(page, `(() => { const r = document.querySelector('#projects .part').getBoundingClientRect(); return scrollY + r.top + r.height / 2 - innerHeight / 2; })()`),
+  },
+  { label: 'wall', run: (page) => scrollTo(page, `scrollY + document.querySelector('#project-list').getBoundingClientRect().top`) },
+  {
+    label: 'wall-card',
+    run: async (page) => {
+      const { result } = await page.send('Runtime.evaluate', {
+        expression: `JSON.stringify((({ x, y, width, height }) => ({ x: x + width * 0.4, y: y + height / 2 }))(document.querySelector('#wall-name-0').getBoundingClientRect()))`,
+        returnByValue: true,
+      });
+      const { x, y } = JSON.parse(result.value);
+      await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+    },
+  },
+  { label: 'about-start', run: (page) => scrollTo(page, aboutAt(0)) },
+  { label: 'about-middle', run: (page) => scrollTo(page, aboutAt(0.5)) },
+  { label: 'about-end', run: (page) => scrollTo(page, aboutAt(0.99)) },
+  { label: 'contact-roll', run: (page) => scrollTo(page, contactAt(0.3)) },
+  { label: 'contact-lock', run: (page) => scrollTo(page, contactAt(0.88)) },
+  { label: 'contact', run: (page) => scrollTo(page, 'document.documentElement.scrollHeight') },
+  {
+    label: 'contact-chat',
+    run: (page) => page.send('Runtime.evaluate', { expression: `document.querySelector('.chat-chips button').click()` }),
+  },
+];
+
 const mode = process.argv[2];
-if (mode !== 'fallback' && mode !== 'review' && mode !== 'meta') {
-  console.error('Usage: node scripts/capture.mjs <fallback|review|meta>');
+if (!['fallback', 'review', 'meta', 'sections'].includes(mode)) {
+  console.error('Usage: node scripts/capture.mjs <fallback|review|meta|sections>');
   process.exit(1);
 }
 
@@ -152,6 +195,28 @@ try {
     const { data } = await page.send('Page.captureScreenshot', { format: 'png' });
     await sharp(Buffer.from(data, 'base64')).png({ compressionLevel: 9 }).toFile(path('../public/og.png'));
     console.log('public/og.png');
+  } else if (mode === 'sections') {
+    const outDir = path('../review/');
+    mkdirSync(outDir, { recursive: true });
+    const sizes = [
+      ['desktop', [1440, 900], false, 'scene=full&'],
+      ['mobile', [390, 844], true, ''],
+    ];
+    for (const [name, [width, height], mobile, query] of sizes) {
+      for (const theme of THEMES) {
+        await page.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile });
+        await page.send('Page.navigate', { url: `${BASE}?${query}theme=${theme}` });
+        await sleep(SETTLE_MS);
+        for (const shot of SECTION_SHOTS) {
+          await shot.run(page);
+          await sleep(1500); // springs, the dip, the slot settling and the chat's typing
+          const { data } = await page.send('Page.captureScreenshot', { format: 'png' });
+          const out = `${outDir}sections-${name}-${theme}-${shot.label}.png`;
+          writeFileSync(out, Buffer.from(data, 'base64'));
+          console.log(`review/sections-${name}-${theme}-${shot.label}.png`);
+        }
+      }
+    }
   } else {
     const outDir = path('../review/');
     mkdirSync(outDir, { recursive: true });
