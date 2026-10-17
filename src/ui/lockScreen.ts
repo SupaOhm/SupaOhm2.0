@@ -14,11 +14,16 @@ export const LOCK_NOTE = { from: 'Supakorn', when: 'now', text: 'made it to the 
 
 const FONT = '"Inter Tight", system-ui, sans-serif';
 
+const DATE = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+
 /** The visitor's own time and date, as a lock screen shows them: "9:41", "Sunday 18 October". */
 export function lockClock(now: Date): Pick<LockState, 'time' | 'date'> {
+  // built from parts: some ICU versions put a comma after the weekday
+  const parts = DATE.formatToParts(now);
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value;
   return {
     time: `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`,
-    date: now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }),
+    date: `${part('weekday')} ${part('day')} ${part('month')}`,
   };
 }
 

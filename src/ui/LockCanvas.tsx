@@ -20,8 +20,17 @@ export function LockCanvas() {
     };
     paint();
     document.fonts?.ready.then(paint); // the clock is set in Inter Tight
+    // repaint as the lock screen wakes (so the clock is current) and when the phone changes size
+    const slot = canvas.closest('[data-phone-slot]');
+    const observer = new MutationObserver(() => {
+      if (slot instanceof HTMLElement && slot.dataset.stage === 'lock') paint();
+    });
+    if (slot) observer.observe(slot, { attributes: true, attributeFilter: ['data-stage'] });
+    window.addEventListener('resize', paint);
     return () => {
       alive = false;
+      observer.disconnect();
+      window.removeEventListener('resize', paint);
     };
   }, []);
 

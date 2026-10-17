@@ -44,6 +44,7 @@ export function AboutRail({ about }: { about: About }) {
       window.removeEventListener('scroll', schedule);
       window.removeEventListener('resize', schedule);
       wide.removeEventListener('change', schedule);
+      track.style.transform = ''; // e.g. reduced motion switched on: the stacked panels must not stay shifted
     };
   }, [reduced]);
 
