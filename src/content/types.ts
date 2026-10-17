@@ -68,3 +68,10 @@ export interface About {
   activities: { name: string; detail: string }[];
   languages: string[];
 }
+
+/** One question chip in the contact phone's chat, with its answer written in advance. */
+export interface ChatTopic {
+  ask: string;
+  answer: string;
+  links: Link[];
+}

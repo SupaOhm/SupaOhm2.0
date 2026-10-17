@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { bestPaper } from '../src/content/award';
+import { chat } from '../src/content/chat';
 import { featured } from '../src/content/featured';
 import { parts } from '../src/content/parts';
 import { profile } from '../src/content/profile';
@@ -113,5 +114,12 @@ describe('content', () => {
   it('keeps featured items grouped in the order of the parts', () => {
     const groups = [...new Set(featured.map((f) => f.group))];
     expect(groups).toEqual(parts.map((p) => p.group));
+  });
+
+  it('links chat answers only to sections on the page, the email, or the owner’s profiles', () => {
+    for (const href of chat.flatMap((t) => t.links.map((l) => l.href))) {
+      if (href.startsWith('#') || href === `mailto:${profile.email}`) continue;
+      expect(hrefs, href).toContain(href);
+    }
   });
 });
