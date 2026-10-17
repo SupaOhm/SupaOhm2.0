@@ -614,3 +614,30 @@ p {
     transform: translate(-50%, -50%);
   }
 }
+
+/* the screen follows the arrival (data-stage, set by SceneLayer): dark, the lock screen from halfway, the chat once landed.
+   With the scene running (data-scene), the 3D screen paints the lock screen and the slot only ever shows the chat */
+.phone-slot {
+  position: relative;
+}
+.phone-lock {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: opacity 0.4s;
+}
+.phone-slot[data-stage='off'] .phone-lock,
+.phone-slot[data-stage='open'] .phone-lock,
+.phone-slot[data-scene] .phone-lock {
+  opacity: 0;
+}
+.phone-slot .chat {
+  transition:
+    opacity 0.3s,
+    visibility 0.3s;
+}
+.phone-slot:not([data-stage='open']) .chat {
+  opacity: 0;
+  visibility: hidden;
+}

@@ -4,9 +4,10 @@ import { backgroundCenter, createBackground } from './background';
 import { buildMorphGeometry } from './geometry';
 import { CAMERA_Z, FOV, fitToSlot, placement, viewSize } from './layout';
 import { createObjectMaterial } from './material';
-import { ease, lerp, smoothstep } from './math';
+import { clamp01, ease, lerp, smoothstep } from './math';
 import { blob, resolveObject } from './objects';
 import { BASE, PALETTE, STATE_COUNT } from './palette';
+import { createLockPlane } from './lockPlane';
 import { createPictures } from './pictures';
 import { POSITION_SPRING, SWELL_SPRING, createSpring } from './springs';
 import { stepState } from './step';
@@ -53,6 +54,8 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
   const group = new Group();
   group.add(mesh, ...pictures.map((p) => p.group));
   scene.add(group);
+  const lock = slotScreen ? createLockPlane(slotScreen) : null;
+  if (lock) group.add(lock.mesh);
   const key = new DirectionalLight('#fff4e6', 2);
   key.position.set(3, 4, 5);
   scene.add(key);
@@ -155,6 +158,11 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
       slotOn = on;
       opts.onSlotChange?.(on);
     }
+    // the lock screen wakes halfway through the arrival, runs Face ID from 80%, and gives way to the chat
+    lock?.update(
+      opts.centered ? 0 : settle * smoothstep(arriveNow, 0.5, 0.6) * (1 - smoothstep(arriveNow, 0.97, 1)),
+      clamp01((arriveNow - 0.8) / 0.17),
+    );
     // capture stills leave a slot state empty: the page draws its own phone there
     mesh.visible = !(opts.centered && slotW > 0.5);
     const offX = viewSize(camera.aspect).w / 2 + (fit?.scale ?? 0) * 1.2;
@@ -276,6 +284,7 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
       window.removeEventListener('pointermove', onPointer);
       document.removeEventListener('visibilitychange', onVisibility);
       for (const p of pictures) p.dispose();
+      lock?.dispose();
       geometry.dispose();
       look.material.dispose();
       background.dispose();

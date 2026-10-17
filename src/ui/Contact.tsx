@@ -1,5 +1,6 @@
 import { chat, chatGreeting } from '../content/chat';
 import type { Profile } from '../content/types';
+import { LockCanvas } from './LockCanvas';
 import { PhoneChat } from './PhoneChat';
 import { sideFor } from './side';
 
@@ -29,6 +30,7 @@ export function Contact({ profile, anchor }: { profile: Profile; anchor: number 
         </p>
       </div>
       <div className="phone-slot" data-phone-slot>
+        <LockCanvas />
         <PhoneChat greeting={chatGreeting} topics={chat} />
       </div>
     </section>
