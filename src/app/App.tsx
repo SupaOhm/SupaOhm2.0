@@ -5,7 +5,7 @@ import { featured } from '../content/featured';
 import { parts } from '../content/parts';
 import { profile } from '../content/profile';
 import { projects } from '../content/projects';
-import { AboutBlock } from '../ui/AboutBlock';
+import { AboutRail } from '../ui/AboutRail';
 import { AwardSection } from '../ui/AwardSection';
 import { Contact } from '../ui/Contact';
 import { FeatureSection } from '../ui/FeatureSection';
@@ -43,7 +43,7 @@ export function App() {
             </section>
           );
         })}
-        <AboutBlock about={about} />
+        <AboutRail about={about} />
         <Contact profile={profile} anchor={featured.length + 2} />
       </main>
     </>

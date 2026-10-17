@@ -276,15 +276,6 @@ p {
 }
 
 /* about */
-.about {
-  padding: 16vh 8vw;
-}
-.about-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 48px 64px;
-  max-width: 1200px;
-}
 .about h3 {
   font-size: 22px;
   letter-spacing: -0.02em;
@@ -305,6 +296,104 @@ p {
 }
 .about-small {
   font-size: 16px;
+}
+
+/* about: wide screens pin the section for four screens of scrolling and slide the panels sideways */
+.about {
+  position: relative;
+}
+.about-sticky {
+  padding: 16vh 8vw;
+}
+.about-track {
+  display: flex;
+  gap: 4vw;
+}
+.about-panel {
+  flex: none;
+  width: min(72vw, 880px);
+}
+.about-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 4px 40px;
+}
+.about-honor {
+  font-size: clamp(28px, 3vw, 44px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+.about-dots {
+  display: none;
+}
+.about[data-mode='rail'] {
+  height: 400vh;
+}
+.about[data-mode='rail'] .about-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: 10vh;
+  padding-bottom: 6vh;
+}
+.about[data-mode='rail'] .about-track {
+  will-change: transform;
+}
+.about[data-mode='stack'] .about-track {
+  flex-direction: column;
+  gap: 56px;
+}
+.about[data-mode='stack'] .about-panel {
+  width: auto;
+  max-width: 880px;
+}
+/* narrow: no pinning; the panels swipe sideways with snapping */
+@media (max-width: 799px) {
+  .about-sticky {
+    padding: 16vh 24px;
+  }
+  .about[data-mode='rail'] {
+    height: auto;
+  }
+  .about[data-mode='rail'] .about-sticky {
+    position: static;
+    height: auto;
+    overflow: visible;
+    display: block;
+    padding: 16vh 24px;
+  }
+  .about[data-mode='rail'] .about-track {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    margin: 0 -24px;
+    padding: 0 24px;
+    gap: 16px;
+  }
+  .about[data-mode='rail'] .about-panel {
+    width: calc(100vw - 64px);
+    scroll-snap-align: start;
+  }
+  .about[data-mode='rail'] .about-dots {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+  }
+}
+.about-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line);
+}
+.about-dots span[data-on] {
+  background: var(--ink);
 }
 
 /* contact */
@@ -351,10 +440,6 @@ p {
   }
   .part-title {
     font-size: min(64px, calc((100vw - 48px) / 5.8));
-  }
-  .about {
-    padding-left: 24px;
-    padding-right: 24px;
   }
   .contact {
     padding: 0 24px 12vh;
