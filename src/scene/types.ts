@@ -2,6 +2,14 @@ export type Theme = 'light' | 'dark';
 
 export type ObjectKind = 'pebble' | 'reader' | 'phone' | 'laptop' | 'frame' | 'tablet' | 'sphere';
 
+/** A page element's box in viewport CSS pixels (from getBoundingClientRect). */
+export interface SlotRect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
 export interface ScenePic {
   src: string;
   /** Crop centre in image coordinates (0..1, top-left origin). */

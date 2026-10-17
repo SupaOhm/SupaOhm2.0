@@ -1,3 +1,5 @@
+import type { SlotRect } from './types';
+
 export const CAMERA_Z = 9;
 export const FOV = 35;
 
@@ -29,4 +31,26 @@ export function placement(aspect: number, mode: 'wide' | 'narrow' | 'centered'):
     return { side: 0, y: h * 0.225, fit: Math.min(1, (w * 0.86) / OBJECT_W, (h * 0.5) / OBJECT_H) };
   }
   return { side: 0, y: 0, fit: Math.min(1, (w * 0.8) / OBJECT_W, (h * 0.8) / OBJECT_H) };
+}
+
+/**
+ * Where to put an object, and how big, so that its front-facing screen (screenH tall, zFront in
+ * front of the object's centre, both in object units) covers `rect` exactly in a vw × vh viewport.
+ * Assumes the camera at CAMERA_Z on the z axis and an unrotated object.
+ */
+export function fitToSlot(
+  rect: SlotRect,
+  vw: number,
+  vh: number,
+  screenH: number,
+  zFront: number,
+): { x: number; y: number; scale: number } {
+  const t = Math.tan((FOV * Math.PI) / 360);
+  const r = rect.height / vh;
+  // the screen spans r of the view height at its own depth: screenH * scale = r * 2t * (CAMERA_Z - zFront * scale)
+  const scale = (r * 2 * t * CAMERA_Z) / (screenH + r * 2 * t * zFront);
+  const depth = CAMERA_Z - zFront * scale;
+  const ndcX = ((rect.left + rect.width / 2) / vw) * 2 - 1;
+  const ndcY = 1 - ((rect.top + rect.height / 2) / vh) * 2;
+  return { x: ndcX * t * (vw / vh) * depth, y: ndcY * t * depth, scale };
 }
