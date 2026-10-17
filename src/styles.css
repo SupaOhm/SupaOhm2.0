@@ -3,6 +3,7 @@
   --ink: #1d1d1f;
   --dim: #515154;
   --line: #d2d2d7;
+  --faint: #c7c7cc;
   --btn: #e8e8ed;
   --bar: rgb(245 245 247 / 0.72);
   color-scheme: light;
@@ -14,6 +15,7 @@
     --ink: #f5f5f7;
     --dim: #a1a1a6;
     --line: #2c2c2e;
+    --faint: #3a3a3c;
     --btn: #1d1d1f;
     --bar: rgb(0 0 0 / 0.6);
     color-scheme: dark;
@@ -25,6 +27,7 @@
   --ink: #f5f5f7;
   --dim: #a1a1a6;
   --line: #2c2c2e;
+  --faint: #3a3a3c;
   --btn: #1d1d1f;
   --bar: rgb(0 0 0 / 0.6);
   color-scheme: dark;
@@ -200,57 +203,76 @@ p {
   margin-top: 20px;
 }
 
-/* project rows */
-.rows {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  max-width: min(560px, 42vw);
-}
-.rows li {
-  padding: 26px 0;
-  border-top: 1px solid var(--line);
-}
-.rows li:last-child {
-  border-bottom: 1px solid var(--line);
-}
-.row-name {
-  font-size: 30px;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
-  margin-bottom: 8px;
-}
-.tech {
-  font-size: 15px;
-}
-
-/* more projects */
-.more {
+/* project wall: every project as one list of names; the active one turns solid */
+.wall {
   position: relative;
-  padding: 14vh 8vw;
+  padding: 14vh 8vw 20vh;
 }
-.subtitle {
-  font-size: clamp(32px, 3.5vw, 48px);
-  line-height: 1;
-  margin-bottom: 36px;
-}
-.more-list {
+.wall-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 28px 48px;
-  max-width: 1100px;
 }
-.more-list a,
-.more-name {
-  font-weight: 600;
+.wall-name {
+  display: inline-block;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: clamp(40px, 6vw, 96px);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+  text-align: left;
+  text-decoration: none;
+  color: var(--faint);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.wall-name:hover,
+.wall-name:focus-visible,
+.wall-name[data-active] {
   color: var(--ink);
 }
-.more-list p {
-  font-size: 16px;
-  margin-top: 4px;
+/* inverted: dark on the light theme, light on the dark one */
+.wall-card {
+  max-width: 280px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 15px;
+  line-height: 1.4;
+}
+.wall-card p {
+  margin: 0 0 6px;
+  color: inherit;
+}
+.wall-card p:last-child {
+  margin-bottom: 0;
+}
+.wall-card a {
+  color: inherit;
+}
+.wall-tech {
+  font-size: 13px;
+  opacity: 0.65;
+}
+.wall-card-float {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  pointer-events: none;
+  visibility: hidden; /* until the first frame positions it */
+}
+.wall-card-inline {
+  margin: 10px 0 18px;
+}
+@media (max-width: 799px) {
+  .wall {
+    padding: 12vh 24px 16vh;
+  }
 }
 
 /* about */
@@ -314,8 +336,7 @@ p {
     justify-content: flex-start;
     padding: 55vh 24px 16vh;
   }
-  .copy,
-  .rows {
+  .copy {
     max-width: 560px;
   }
   /* measured in Inter Tight 800: "Prayongyam" is 5.56 em wide, "MA-ZeroPhish" 6.5 em; keep both inside the gutters */
@@ -331,7 +352,6 @@ p {
   .part-title {
     font-size: min(64px, calc((100vw - 48px) / 5.8));
   }
-  .more,
   .about {
     padding-left: 24px;
     padding-right: 24px;
@@ -341,7 +361,7 @@ p {
   }
 }
 
-/* 3D layer: fixed behind the text, faded out (and paused) as More projects arrives */
+/* 3D layer: fixed behind the text, faded out (and paused) from the project wall until Contact */
 .scene {
   position: fixed;
   inset: 0;

@@ -40,7 +40,8 @@ describe('App', () => {
     const anchors = [...container.querySelectorAll<HTMLElement>('[data-anchor]')];
     expect(anchors.map((el) => el.dataset.anchor)).toEqual(['0', '1', '2', '3', '4', '5', '6', '7']);
     expect(anchors.map((el) => el.dataset.side)).toEqual(['left', 'right', 'left', 'right', 'left', 'right', 'left', 'right']);
-    expect(container.querySelector('[data-scene-exit]')).toHaveAttribute('aria-labelledby', 'more-title');
+    expect(container.querySelector('[data-scene-exit]')).toHaveAttribute('id', 'project-list');
+    expect(anchors.at(-1)).toHaveAttribute('id', 'contact');
   });
 
   it('switches theme from the top bar', async () => {

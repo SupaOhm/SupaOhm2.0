@@ -6,7 +6,7 @@ import { bestPaper } from '../src/content/award';
 import { featured } from '../src/content/featured';
 import { parts } from '../src/content/parts';
 import { profile } from '../src/content/profile';
-import { moreProjects, projectRows } from '../src/content/projects';
+import { projects } from '../src/content/projects';
 
 // npm test runs from the repo root; import.meta.url is an http URL under the jsdom environment.
 const ROOT = process.cwd();
@@ -80,8 +80,7 @@ describe('content', () => {
     profile.github.href,
     profile.linkedin.href,
     ...featured.flatMap((f) => f.links.map((l) => l.href)),
-    ...projectRows.map((r) => r.href),
-    ...moreProjects.flatMap((m) => (m.href ? [m.href] : [])),
+    ...projects.flatMap((p) => (p.href ? [p.href] : [])),
   ];
 
   it('links only to the owner’s public profiles and repositories, over https', () => {
@@ -104,6 +103,11 @@ describe('content', () => {
   it('lists the five featured items in page order', () => {
     expect(featured.map((f) => f.id)).toEqual(['mizuhada', 'baka', 'esnidsaas', 'ma-zerophish', 'acklab']);
     expect(featured.map((f) => f.object)).toEqual(['laptop', 'frame', 'reader', 'phone', 'tablet']);
+  });
+
+  it('lists all ten projects, the three with a stack and a repository first', () => {
+    expect(projects).toHaveLength(10);
+    expect(projects.slice(0, 3).every((p) => p.tech && p.href)).toBe(true);
   });
 
   it('keeps featured items grouped in the order of the parts', () => {

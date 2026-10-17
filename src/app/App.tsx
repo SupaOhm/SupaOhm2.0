@@ -4,15 +4,14 @@ import { bestPaper } from '../content/award';
 import { featured } from '../content/featured';
 import { parts } from '../content/parts';
 import { profile } from '../content/profile';
-import { moreProjects, projectRows } from '../content/projects';
+import { projects } from '../content/projects';
 import { AboutBlock } from '../ui/AboutBlock';
 import { AwardSection } from '../ui/AwardSection';
 import { Contact } from '../ui/Contact';
 import { FeatureSection } from '../ui/FeatureSection';
 import { Hero } from '../ui/Hero';
-import { MoreProjects } from '../ui/MoreProjects';
 import { PartHeading } from '../ui/PartHeading';
-import { ProjectRows } from '../ui/ProjectRows';
+import { ProjectWall } from '../ui/ProjectWall';
 import { TopBar } from '../ui/TopBar';
 import { SceneLayer } from './SceneLayer';
 import { SCENE_ITEMS } from './sceneItems';
@@ -36,21 +35,16 @@ export function App() {
           return (
             <section key={id} id={id} aria-labelledby={`${id}-title`}>
               <PartHeading part={part} />
-              {/* anchors: 0 is the hero, 1 the Best Paper section, then the featured items */}
+              {/* anchors: 0 is the hero, 1 the Best Paper section, then the featured items; Contact is the last */}
               {featured.map(
                 (item, i) => item.group === part.group && <FeatureSection key={item.id} item={item} anchor={i + 2} />,
               )}
-              {part.group === 'Projects' && (
-                <>
-                  <ProjectRows rows={projectRows} anchor={featured.length + 2} />
-                  <MoreProjects items={moreProjects} />
-                </>
-              )}
+              {part.group === 'Projects' && <ProjectWall projects={projects} />}
             </section>
           );
         })}
         <AboutBlock about={about} />
-        <Contact profile={profile} />
+        <Contact profile={profile} anchor={featured.length + 2} />
       </main>
     </>
   );

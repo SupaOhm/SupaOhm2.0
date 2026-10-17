@@ -30,16 +30,11 @@ export interface Part {
   line: string;
 }
 
-export interface ProjectRow {
+/** One name on the project wall. `tech` and `href` are shown on its card when present. */
+export interface Project {
   name: string;
   line: string;
-  tech: string;
-  href: string;
-}
-
-export interface MoreProject {
-  name: string;
-  line: string;
+  tech?: string;
   href?: string;
 }
 

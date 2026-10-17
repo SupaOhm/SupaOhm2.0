@@ -1,8 +1,9 @@
 import type { Profile } from '../content/types';
+import { sideFor } from './side';
 
-export function Contact({ profile }: { profile: Profile }) {
+export function Contact({ profile, anchor }: { profile: Profile; anchor: number }) {
   return (
-    <section className="contact" id="contact" aria-labelledby="contact-title">
+    <section className="contact" id="contact" data-anchor={anchor} data-side={sideFor(anchor)} aria-labelledby="contact-title">
       <h2 className="part-title" id="contact-title">
         Say hello.
       </h2>
