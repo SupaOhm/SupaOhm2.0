@@ -26,6 +26,7 @@ export function SceneLayer({ items, theme, capture = false }: { items: SceneItem
   const layerRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<SceneHandle | null>(null);
   const progressRef = useRef(forcedP ?? 0);
+  const dipRef = useRef(0);
   const activeRef = useRef(true);
   const themeRef = useRef(theme);
   const [status, setStatus] = useState<Status>(mode === 'static' ? 'static' : 'loading');
@@ -81,6 +82,7 @@ export function SceneLayer({ items, theme, capture = false }: { items: SceneItem
         });
         handle.setTheme(themeRef.current);
         handle.setProgress(progressRef.current);
+        handle.setDip(dipRef.current);
         handle.setActive(activeRef.current); // the page may open already scrolled past the scene
         handleRef.current = handle;
       } catch (err) {
@@ -102,8 +104,10 @@ export function SceneLayer({ items, theme, capture = false }: { items: SceneItem
     (s: ScrollSample) => {
       if (capture) return;
       progressRef.current = s.p;
+      dipRef.current = s.dip;
       activeRef.current = s.exit < 1;
       handleRef.current?.setProgress(s.p);
+      handleRef.current?.setDip(s.dip);
       handleRef.current?.setActive(activeRef.current);
       if (layerRef.current) layerRef.current.style.opacity = String(1 - s.exit);
       setFallbackState(clampState(s.p, items.length));

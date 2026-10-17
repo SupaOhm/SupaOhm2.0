@@ -8,17 +8,17 @@ import { SCENE_ITEMS } from './sceneItems';
 
 const { createScene, scroll } = vi.hoisted(() => ({
   createScene: vi.fn(),
-  scroll: { sample: null as null | ((s: { p: number; exit: number }) => void) },
+  scroll: { sample: null as null | ((s: { p: number; exit: number; dip: number; arrive: number }) => void) },
 }));
 vi.mock('../scroll/useScrollProgress', () => ({
-  useScrollProgress: (onSample: (s: { p: number; exit: number }) => void) => {
+  useScrollProgress: (onSample: (s: { p: number; exit: number; dip: number; arrive: number }) => void) => {
     scroll.sample = onSample;
   },
 }));
 vi.mock('../scene/createScene', () => ({ createScene }));
 vi.mock('./capability', () => ({ detectSceneMode: vi.fn(() => 'full') }));
 
-const handle = (): SceneHandle => ({ setProgress: vi.fn(), setTheme: vi.fn(), setActive: vi.fn(), dispose: vi.fn() });
+const handle = (): SceneHandle => ({ setProgress: vi.fn(), setTheme: vi.fn(), setActive: vi.fn(), setDip: vi.fn(), dispose: vi.fn() });
 
 describe('SceneLayer', () => {
   beforeEach(() => {
@@ -78,6 +78,15 @@ describe('SceneLayer', () => {
     expect(h.setTheme).toHaveBeenLastCalledWith('dark');
   });
 
+  it('forwards the heading dip to a running scene', async () => {
+    const h = handle();
+    createScene.mockReturnValue(h);
+    render(<SceneLayer items={SCENE_ITEMS} theme="light" />);
+    await waitFor(() => expect(createScene).toHaveBeenCalled());
+    act(() => scroll.sample!({ p: 2, exit: 0, dip: 0.7, arrive: 0 }));
+    expect(h.setDip).toHaveBeenLastCalledWith(0.7);
+  });
+
   it('clamps a forced progress beyond the last state to the last still', () => {
     vi.mocked(detectSceneMode).mockReturnValue('static');
     window.history.replaceState(null, '', '/?p=9');
@@ -88,9 +97,9 @@ describe('SceneLayer', () => {
   it('clamps scroll progress to the available stills', () => {
     vi.mocked(detectSceneMode).mockReturnValue('static');
     render(<SceneLayer items={SCENE_ITEMS} theme="light" />);
-    act(() => scroll.sample!({ p: 7.4, exit: 0 }));
+    act(() => scroll.sample!({ p: 7.4, exit: 0, dip: 0, arrive: 0 }));
     expect(screen.getByTestId('scene-fallback')).toHaveAttribute('src', '/fallback/7-light.webp');
-    act(() => scroll.sample!({ p: -0.8, exit: 0 }));
+    act(() => scroll.sample!({ p: -0.8, exit: 0, dip: 0, arrive: 0 }));
     expect(screen.getByTestId('scene-fallback')).toHaveAttribute('src', '/fallback/0-light.webp');
   });
 

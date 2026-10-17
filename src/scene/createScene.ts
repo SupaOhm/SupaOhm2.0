@@ -74,6 +74,8 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
   let time = 0;
   let frames = 0;
   let frameSum = 0;
+let dip = 0;
+let dipNow = 0;
 
   function resize() {
     const w = canvas.clientWidth || window.innerWidth;
@@ -140,7 +142,9 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
 
     // swell with overshoot, squash and stretch from sideways speed (units per frame at 60 fps)
     const stretch = still ? 0 : Math.min(0.35, (Math.abs(posX.v) / 60) * 2.6);
-    const size = swell.x * place.fit;
+    // part headings passing the middle of the screen melt the object down to a droplet
+    dipNow = still ? dip : dipNow + (dip - dipNow) * (1 - Math.exp(-dt * 10));
+    const size = swell.x * place.fit * (1 - 0.82 * dipNow);
     group.scale.set(size * (1 + stretch), size * (1 - stretch * 0.6), size);
     camera.position.z = CAMERA_Z - wBlob * 1.1;
 
@@ -220,6 +224,9 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
     },
     setTheme(t) {
       theme = t;
+    },
+    setDip(d) {
+      dip = d;
     },
     setActive(a) {
       active = a;

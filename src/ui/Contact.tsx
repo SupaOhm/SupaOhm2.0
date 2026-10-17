@@ -9,7 +9,7 @@ import { sideFor } from './side';
  */
 export function Contact({ profile, anchor }: { profile: Profile; anchor: number }) {
   return (
-    <section className="contact" id="contact" data-anchor={anchor} data-side={sideFor(anchor)} aria-labelledby="contact-title">
+    <section className="contact" id="contact" data-anchor={anchor} data-side={sideFor(anchor)} data-scene-return aria-labelledby="contact-title">
       <div className="contact-copy">
         <h2 className="part-title" id="contact-title">
           Say hello.

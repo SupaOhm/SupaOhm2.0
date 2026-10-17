@@ -39,6 +39,8 @@ export interface SceneOptions {
 export interface SceneHandle {
   setProgress(p: number): void;
   setTheme(theme: Theme): void;
+  /** 0..1: a part heading is passing the middle of the screen; the object melts down to a droplet. */
+  setDip(d: number): void;
   /** Pause rendering while the canvas is faded out. */
   setActive(active: boolean): void;
   dispose(): void;

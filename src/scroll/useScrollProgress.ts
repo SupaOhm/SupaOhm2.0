@@ -1,11 +1,15 @@
 import { useEffect, useRef } from 'react';
-import { anchorPoint, exitFade, progressFromAnchors, scrollYForProgress } from './progress';
+import { anchorPoint, arriveAmount, dipAmount, progressFromAnchors, sceneFade, scrollYForProgress } from './progress';
 
 export interface ScrollSample {
   /** Object-state progress, 0..n-1. */
   p: number;
-  /** 0..1 as the More projects list arrives; the scene fades out by this much. */
+  /** 0..1: how far the scene has faded out, from the project wall until Contact brings it back. */
   exit: number;
+  /** 0..1: how close a part heading is to the middle of the screen. */
+  dip: number;
+  /** 0..1: the contact phone's arrival, over the last screen of the page. */
+  arrive: number;
 }
 
 /**
@@ -22,6 +26,8 @@ export function useScrollProgress(onSample: (s: ScrollSample) => void, initialP:
     let alive = true;
     let anchors: number[] = [];
     let exitTop = Infinity;
+    let returnTop = Infinity;
+    let dips: number[] = [];
     let frame = 0;
 
     const measure = () => {
@@ -33,14 +39,25 @@ export function useScrollProgress(onSample: (s: ScrollSample) => void, initialP:
           const r = el.getBoundingClientRect();
           return anchorPoint(r.top + window.scrollY, r.height, vh, narrow);
         });
-      const exitEl = document.querySelector<HTMLElement>('[data-scene-exit]');
-      exitTop = exitEl ? exitEl.getBoundingClientRect().top + window.scrollY : Infinity;
+      const pageTop = (el: Element | null) => (el ? el.getBoundingClientRect().top + window.scrollY : Infinity);
+      exitTop = pageTop(document.querySelector('[data-scene-exit]'));
+      returnTop = pageTop(document.querySelector('[data-scene-return]'));
+      dips = [...document.querySelectorAll('[data-scene-dip]')].map((el) => {
+        const r = el.getBoundingClientRect();
+        return r.top + window.scrollY + r.height / 2;
+      });
     };
 
     const sample = () => {
       frame = 0;
       const y = window.scrollY + window.innerHeight / 2;
-      callback.current({ p: progressFromAnchors(y, anchors), exit: exitFade(y, exitTop, window.innerHeight) });
+      const vh = window.innerHeight;
+      callback.current({
+        p: progressFromAnchors(y, anchors),
+        exit: sceneFade(y, exitTop, returnTop, vh),
+        dip: dipAmount(y, dips, vh),
+        arrive: arriveAmount(y, returnTop, vh),
+      });
     };
 
     const schedule = () => {
