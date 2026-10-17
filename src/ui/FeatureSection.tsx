@@ -1,13 +1,14 @@
 import type { FeaturedItem } from '../content/types';
 import { sideFor } from './side';
 
-export function FeatureSection({ item, anchor }: { item: FeaturedItem; anchor: number }) {
+/** With an anchor the item has an object beside it; without one it is a text-only entry. */
+export function FeatureSection({ item, anchor }: { item: FeaturedItem; anchor?: number }) {
   return (
     <section
-      className="panel"
+      className={anchor === undefined ? 'entry' : 'panel'}
       id={item.id}
       data-anchor={anchor}
-      data-side={sideFor(anchor)}
+      data-side={anchor === undefined ? undefined : sideFor(anchor)}
       aria-labelledby={`${item.id}-title`}
     >
       <div className="copy">

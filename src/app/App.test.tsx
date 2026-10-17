@@ -10,6 +10,7 @@ describe('App', () => {
   it('lays sections out in CV order', () => {
     render(<App />);
     expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
+      'Best Paper',
       'Experience',
       'Research',
       'Projects',
@@ -24,12 +25,16 @@ describe('App', () => {
     ).toEqual(['Mizuhada Group', 'Baka Co.', 'ESNIDSaaS', 'MA-ZeroPhish', 'AckLab']);
   });
 
-  it('shows the Best Paper award in the hero, linked to its full entry', () => {
+  it('puts Best Paper right after the hero, with the e-reader, linked to the full entry', () => {
     const { container } = render(<App />);
-    const hero = container.querySelector<HTMLElement>('#top')!;
-    expect(hero).toHaveTextContent('Best Paper Award, IEEE IMC 2026');
-    const link = within(hero).getByRole('link', { name: 'ESNIDSaaS' });
-    expect(container.querySelector(link.getAttribute('href')!)).toHaveAttribute('aria-labelledby', 'esnidsaas-title');
+    const section = container.querySelector<HTMLElement>('#best-paper')!;
+    expect(section.previousElementSibling).toHaveAttribute('id', 'top');
+    expect(section).toHaveAttribute('data-anchor', '1');
+    expect(section).toHaveTextContent('IEEE IMC 2026');
+    const link = within(section).getByRole('link', { name: 'Read about the research' });
+    const entry = container.querySelector(link.getAttribute('href')!);
+    expect(entry).toHaveAttribute('aria-labelledby', 'esnidsaas-title');
+    expect(entry).not.toHaveAttribute('data-anchor');
   });
 
   it('marks one scroll anchor per object state, alternating sides', () => {

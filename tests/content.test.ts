@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { bestPaper } from '../src/content/award';
 import { featured } from '../src/content/featured';
 import { parts } from '../src/content/parts';
 import { profile } from '../src/content/profile';
@@ -94,7 +95,7 @@ describe('content', () => {
   });
 
   it('points every screenshot at a real file or a named placeholder', () => {
-    for (const pic of featured.flatMap((f) => f.pics)) {
+    for (const pic of [...bestPaper.pics, ...featured.flatMap((f) => f.pics)]) {
       if (pic.src.includes('.placeholder.')) continue;
       expect(existsSync(join(ROOT, 'public', pic.src)), pic.src).toBe(true);
     }
@@ -102,7 +103,7 @@ describe('content', () => {
 
   it('lists the five featured items in page order', () => {
     expect(featured.map((f) => f.id)).toEqual(['mizuhada', 'baka', 'esnidsaas', 'ma-zerophish', 'acklab']);
-    expect(featured.map((f) => f.object)).toEqual(['laptop', 'frame', 'reader', 'phone', 'tablet']);
+    expect(featured.map((f) => f.object)).toEqual(['laptop', 'frame', null, 'phone', 'tablet']);
   });
 
   it('keeps featured items grouped in the order of the parts', () => {

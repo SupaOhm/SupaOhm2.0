@@ -1,6 +1,6 @@
 import type { FeaturedItem } from './types';
 
-// Page order: experience, then research, then the lead project. The hero carries the Best Paper award.
+// Page order: experience, then research, then the lead project. The Best Paper section (award.ts) comes before all three.
 export const featured: FeaturedItem[] = [
   {
     id: 'mizuhada',
@@ -44,8 +44,8 @@ export const featured: FeaturedItem[] = [
     ],
     figures: ['0.9557 accuracy and 0.8479 F1 on CIC-IDS2017.'],
     links: [],
-    object: 'reader',
-    pics: [{ src: '/shots/esnidsaas.webp' }],
+    object: null,
+    pics: [],
   },
   {
     id: 'ma-zerophish',

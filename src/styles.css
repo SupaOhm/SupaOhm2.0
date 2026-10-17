@@ -179,13 +179,6 @@ p {
 .hero-line {
   margin-top: 28px;
 }
-.hero-award {
-  margin-top: 32px;
-}
-.hero-award-name {
-  color: var(--ink);
-  font-weight: 600;
-}
 .meta {
   color: var(--ink);
   font-weight: 600;
@@ -205,6 +198,11 @@ p {
   flex-wrap: wrap;
   gap: 24px;
   margin-top: 20px;
+}
+
+/* a text-only entry: its object is shown elsewhere, so it needs no reserved space */
+.entry {
+  padding: 22vh 8vw;
 }
 
 /* project rows */
@@ -320,6 +318,9 @@ p {
     align-items: flex-start;
     justify-content: flex-start;
     padding: 55vh 24px 16vh;
+  }
+  .entry {
+    padding: 16vh 24px;
   }
   .copy,
   .rows {
