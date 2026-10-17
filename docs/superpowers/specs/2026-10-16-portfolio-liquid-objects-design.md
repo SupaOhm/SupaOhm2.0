@@ -18,19 +18,19 @@ The approved reference prototype is `.superpowers/brainstorm/proto-liquid.html`.
 - The internal product name of the Mizuhada assistant must not appear anywhere in the repository: copy, code, file names, alt text, comments, docs or commit messages. It is described only as "an enterprise multi-agent RAG assistant". `.superpowers/` (brainstorm prototypes) is never committed and is git-ignored.
 - No CMS. Content lives in a typed data file.
 
-## 3. Page structure (CV order)
+## 3. Page structure
 
 | # | Section | Object | Content |
 |---|---------|--------|---------|
-| 0 | Hero | pebble | Name, very large. One line: "Computer engineering student at SIIT, Thammasat. I build AI systems, security tooling, and the distributed infrastructure under both." |
-| 1 | Research: ESNIDSaaS | e-reader | Best Paper Award, IEEE IMC 2026 (CISOSE 2026, Fukuoka). Cloud-native multi-tenant intrusion detection: Kafka ingestion, Spark Structured Streaming, hybrid detection. 0.9557 accuracy on CIC-IDS2017. |
-| 2 | Research: MA-ZeroPhish | phone | Ongoing research at SIIT. Five specialist agents plus a Moderator and a Judge, for zero-day phishing detection. |
-| 3 | Experience: AI Developer Intern, Mizuhada Group (Jun–Jul 2026) | laptop | "Built an enterprise multi-agent RAG assistant for company knowledge and live warehouse inventory." Public facts only: document lookup time down 91.3% (54.54 s to 4.728 s), 100% source matching in evaluation, warehouse access restricted to 12 read-only query tools. The screen shows a mock or blurred UI that the owner supplies, never real company data. |
-| 4 | Experience: UX/UI Research & Design Intern, Baka Co. (Aug 2025 onward) | frame | Baka Index redesign of a farming analytics platform on Google Earth Engine, from stakeholder research to high-fidelity mockups. |
+| 0 | Hero | pebble | Name, very large. One line: "Computer engineering student at SIIT, Thammasat. I build AI systems, security tooling, and the distributed infrastructure under both." Below it, one line: "Best Paper Award, IEEE IMC 2026, for ESNIDSaaS", linking to its full entry in Research. |
+| 1 | Experience: AI Developer Intern, Mizuhada Group (Jun–Jul 2026) | laptop | "Built an enterprise multi-agent RAG assistant for company knowledge and live warehouse inventory." Public facts only: document lookup time down 91.3% (54.54 s to 4.728 s), 100% source matching in evaluation, warehouse access restricted to 12 read-only query tools. The screen shows a mock or blurred UI that the owner supplies, never real company data. |
+| 2 | Experience: UX/UI Research & Design Intern, Baka Co. (Aug 2025 onward) | frame | Baka Index redesign of a farming analytics platform on Google Earth Engine, from stakeholder research to high-fidelity mockups. |
+| 3 | Research: ESNIDSaaS | e-reader | Best Paper Award, IEEE IMC 2026 (CISOSE 2026, Fukuoka). Cloud-native multi-tenant intrusion detection: Kafka ingestion, Spark Structured Streaming, hybrid detection. 0.9557 accuracy on CIC-IDS2017. |
+| 4 | Research: MA-ZeroPhish | phone | Ongoing research at SIIT. Five specialist agents plus a Moderator and a Judge, for zero-day phishing detection. |
 | 5 | Projects: AckLab | tablet | An interactive networking learning platform. GitHub link. |
 | 6 | Projects list, More projects | sphere (small) | The sphere sits beside the project list, then fades out as the More projects list begins, so no list text sits under it. More projects, About and Contact have no 3D. See below. |
 
-Section headings are plain words ("Research", "Experience", "Projects"), never all-caps eyebrow labels.
+Each part (Experience, Research, Projects, About, Contact) opens with a large heading in plain words, never an all-caps eyebrow label, followed by one plain line describing the part. Experience comes before Research; only the Best Paper line in the hero sits above it (owner decision, 2026-10-17).
 
 **Projects list** (compact rows: name, one line, tech, GitHub link): FastForm, Full-Stack Expense Tracker, Lost and Found Management System.
 
@@ -60,7 +60,7 @@ Section headings are plain words ("Research", "Experience", "Projects"), never a
 
 ## 5. Scene behaviour
 
-- **States:** N = 7 object states, in order: pebble (hero), e-reader, phone, laptop, frame, tablet, sphere (Projects list).
+- **States:** N = 7 object states, in order: pebble (hero), laptop, frame, e-reader, phone, tablet, sphere (Projects list).
 - **Progress:** measured from the DOM, not from a uniform section height. Each state k has an anchor element (the hero, the five featured sections, and the Projects heading). `c_k` is the anchor's vertical centre in page coordinates. With `y = scrollY + innerHeight/2`, `p = k + (y - c_k) / (c_{k+1} - c_k)` for `c_k ≤ y < c_{k+1}`, clamped to [0, N-1]. Anchors are re-measured on resize and when fonts or images finish loading.
 - **Smoothing:** frame-rate independent damping, `p_s += (p - p_s) · (1 - exp(-dt · 3))` with dt in seconds. The springs (position and swell) also integrate with dt.
 - **Step timing:** within the step from k to k+1, with `g = clamp((f - 0.2) / 0.6)`:

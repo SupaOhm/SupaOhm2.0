@@ -1,34 +1,7 @@
 import type { FeaturedItem } from './types';
 
-// CV order: research first (it carries the award), then experience, then the lead project.
+// Page order: experience, then research, then the lead project. The hero carries the Best Paper award.
 export const featured: FeaturedItem[] = [
-  {
-    id: 'esnidsaas',
-    group: 'Research',
-    title: 'ESNIDSaaS',
-    meta: 'Best Paper Award, IEEE IMC 2026 (CISOSE 2026, Fukuoka)',
-    body: [
-      'Network intrusion detection as a cloud service. Kafka ingests each tenant’s traffic, Spark Structured Streaming prepares it, and a hybrid detector combines signature rules, behavioural rules and machine learning.',
-    ],
-    figures: ['0.9557 accuracy and 0.8479 F1 on CIC-IDS2017.'],
-    links: [],
-    object: 'reader',
-    pics: [{ src: '/shots/esnidsaas.webp' }],
-  },
-  {
-    id: 'ma-zerophish',
-    group: 'Research',
-    title: 'MA-ZeroPhish',
-    meta: 'Ongoing research at SIIT',
-    body: [
-      'Zero-day phishing detection by a team of agents. Five specialists read the URL, the page structure, its visuals, the message body and the network behind it.',
-      'A Moderator and a Judge weigh the evidence, settle conflicts and ask for another look when the evidence is not enough.',
-    ],
-    figures: [],
-    links: [],
-    object: 'phone',
-    pics: [{ src: '/shots/ma-zerophish.placeholder.webp' }],
-  },
   {
     id: 'mizuhada',
     group: 'Experience',
@@ -60,6 +33,33 @@ export const featured: FeaturedItem[] = [
     links: [],
     object: 'frame',
     pics: [{ src: '/shots/baka.webp' }],
+  },
+  {
+    id: 'esnidsaas',
+    group: 'Research',
+    title: 'ESNIDSaaS',
+    meta: 'Best Paper Award, IEEE IMC 2026 (CISOSE 2026, Fukuoka)',
+    body: [
+      'Network intrusion detection as a cloud service. Kafka ingests each tenant’s traffic, Spark Structured Streaming prepares it, and a hybrid detector combines signature rules, behavioural rules and machine learning.',
+    ],
+    figures: ['0.9557 accuracy and 0.8479 F1 on CIC-IDS2017.'],
+    links: [],
+    object: 'reader',
+    pics: [{ src: '/shots/esnidsaas.webp' }],
+  },
+  {
+    id: 'ma-zerophish',
+    group: 'Research',
+    title: 'MA-ZeroPhish',
+    meta: 'Ongoing research at SIIT',
+    body: [
+      'Zero-day phishing detection by a team of agents. Five specialists read the URL, the page structure, its visuals, the message body and the network behind it.',
+      'A Moderator and a Judge weigh the evidence, settle conflicts and ask for another look when the evidence is not enough.',
+    ],
+    figures: [],
+    links: [],
+    object: 'phone',
+    pics: [{ src: '/shots/ma-zerophish.placeholder.webp' }],
   },
   {
     id: 'acklab',

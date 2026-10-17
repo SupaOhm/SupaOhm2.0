@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { featured } from '../src/content/featured';
+import { parts } from '../src/content/parts';
 import { profile } from '../src/content/profile';
 import { moreProjects, projectRows } from '../src/content/projects';
 
@@ -99,8 +100,13 @@ describe('content', () => {
     }
   });
 
-  it('lists the five featured items in CV order', () => {
-    expect(featured.map((f) => f.id)).toEqual(['esnidsaas', 'ma-zerophish', 'mizuhada', 'baka', 'acklab']);
-    expect(featured.map((f) => f.object)).toEqual(['reader', 'phone', 'laptop', 'frame', 'tablet']);
+  it('lists the five featured items in page order', () => {
+    expect(featured.map((f) => f.id)).toEqual(['mizuhada', 'baka', 'esnidsaas', 'ma-zerophish', 'acklab']);
+    expect(featured.map((f) => f.object)).toEqual(['laptop', 'frame', 'reader', 'phone', 'tablet']);
+  });
+
+  it('keeps featured items grouped in the order of the parts', () => {
+    const groups = [...new Set(featured.map((f) => f.group))];
+    expect(groups).toEqual(parts.map((p) => p.group));
   });
 });

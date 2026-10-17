@@ -3,7 +3,7 @@ import type { Profile } from '../content/types';
 export function Contact({ profile }: { profile: Profile }) {
   return (
     <section className="contact" id="contact" aria-labelledby="contact-title">
-      <h2 className="title" id="contact-title">
+      <h2 className="part-title" id="contact-title">
         Say hello.
       </h2>
       <p>

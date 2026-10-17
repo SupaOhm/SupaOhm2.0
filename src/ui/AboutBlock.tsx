@@ -3,7 +3,7 @@ import type { About } from '../content/types';
 export function AboutBlock({ about }: { about: About }) {
   return (
     <section className="about" id="about" aria-labelledby="about-title">
-      <h2 className="title" id="about-title">
+      <h2 className="part-title" id="about-title">
         About
       </h2>
       <div className="about-grid">

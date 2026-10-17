@@ -1,19 +1,18 @@
 import type { FeaturedItem } from '../content/types';
 import { sideFor } from './side';
 
-export function FeatureSection({ item, anchor, groupStart }: { item: FeaturedItem; anchor: number; groupStart: boolean }) {
+export function FeatureSection({ item, anchor }: { item: FeaturedItem; anchor: number }) {
   return (
     <section
       className="panel"
-      id={groupStart ? item.group.toLowerCase() : undefined}
+      id={item.id}
       data-anchor={anchor}
       data-side={sideFor(anchor)}
       aria-labelledby={`${item.id}-title`}
     >
       <div className="copy">
-        {groupStart && <h2 className="group">{item.group}</h2>}
         <h3 className="title" id={`${item.id}-title`}>
-          {item.title.replaceAll('-', '\u2011')}
+          {item.title.replaceAll('-', '‑')}
         </h3>
         <p className="meta">{item.meta}</p>
         {item.body.map((text) => (

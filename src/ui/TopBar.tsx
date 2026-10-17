@@ -2,8 +2,8 @@ import type { Theme } from '../scene/types';
 import { ThemeToggle } from './ThemeToggle';
 
 const SECTIONS = [
-  ['research', 'Research'],
   ['experience', 'Experience'],
+  ['research', 'Research'],
   ['projects', 'Projects'],
   ['about', 'About'],
   ['contact', 'Contact'],

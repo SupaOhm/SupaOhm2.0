@@ -10,8 +10,8 @@ describe('App', () => {
   it('lays sections out in CV order', () => {
     render(<App />);
     expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
-      'Research',
       'Experience',
+      'Research',
       'Projects',
       'About',
       'Say hello.',
@@ -21,7 +21,15 @@ describe('App', () => {
         .getAllByRole('heading', { level: 3 })
         .slice(0, 5)
         .map((h) => h.textContent?.replaceAll('\u2011', '-')),
-    ).toEqual(['ESNIDSaaS', 'MA-ZeroPhish', 'Mizuhada Group', 'Baka Co.', 'AckLab']);
+    ).toEqual(['Mizuhada Group', 'Baka Co.', 'ESNIDSaaS', 'MA-ZeroPhish', 'AckLab']);
+  });
+
+  it('shows the Best Paper award in the hero, linked to its full entry', () => {
+    const { container } = render(<App />);
+    const hero = container.querySelector<HTMLElement>('#top')!;
+    expect(hero).toHaveTextContent('Best Paper Award, IEEE IMC 2026');
+    const link = within(hero).getByRole('link', { name: 'ESNIDSaaS' });
+    expect(container.querySelector(link.getAttribute('href')!)).toHaveAttribute('aria-labelledby', 'esnidsaas-title');
   });
 
   it('marks one scroll anchor per object state, alternating sides', () => {

@@ -24,6 +24,12 @@ export interface FeaturedItem {
   pics: Pic[];
 }
 
+/** A part of the page: its heading and one line under it. */
+export interface Part {
+  group: Group;
+  line: string;
+}
+
 export interface ProjectRow {
   name: string;
   line: string;
@@ -37,9 +43,18 @@ export interface MoreProject {
   href?: string;
 }
 
+/** The headline award, shown in the hero and linked to its full entry further down. */
+export interface Award {
+  name: string;
+  work: string;
+  line: string;
+  href: string;
+}
+
 export interface Profile {
   name: string;
   intro: string;
+  award: Award;
   email: string;
   github: Link;
   linkedin: Link;
