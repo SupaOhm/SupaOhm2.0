@@ -37,9 +37,9 @@ Chosen in brainstorming (visual companion):
 | — | About, sideways | hidden |
 | 7 | Contact | **phone**, `pics: []` (dark glass), scene fades back in (`data-scene-return`) |
 
-- `STATE_COUNT` stays 8. `SCENE_ITEMS[7]` becomes `{ kind: 'phone', pics: [], label: 'Say hello.' }`; the sphere state and `ProjectRows` go.
+- `STATE_COUNT` stays 8. `SCENE_ITEMS[7]` becomes `{ kind: 'phone', pics: [], label: 'Say hello.', slot: true }`; the sphere state and `ProjectRows` go. `slot: true` marks a state whose screen the page draws.
 - Palette entry 7 reuses the hero pair (dark `#E8C9A0/#1F4A5A`, light `#B98450/#F1DFC8`), as today.
-- `sideFor(7)` is `'right'`: Contact text on the left, phone on the right on wide screens.
+- Contact keeps `data-side={sideFor(7)}` (`'right'`) so anchor sides still alternate, but its layout ignores it: the phone's position comes from the slot (3.3), with text on the left and the phone on the right on wide screens.
 - The tablet→phone morph completes while the scene is hidden, so the phone arrives formed.
 
 ### 3.1 Exit and return
@@ -58,7 +58,13 @@ Contact contains `[data-phone-slot]`, a phone-shaped box in normal flow (aspect 
 
 When `p` is within 0.5 of 7 and the scene is visible, the scene reads the slot's viewport rect each frame (passed in from `SceneLayer` via `setSlot(rect | null)`) and places and scales the phone so its screen fills the slot exactly. It settles front-facing with no rotation; the arrival can spin, and the chat fades in (opacity 0 to 1 over 300 ms) once the phone has settled (`onSettled` callback, or immediately with reduced motion).
 
-The slot itself draws a CSS phone frame (dark rounded bezel) whenever the scene is not `ready` (static, loading, lost context). When the 3D phone is drawn, the CSS bezel is hidden and the chat background is transparent over the dark glass.
+The scene reports `onSlotChange(on)`; `SceneLayer` mirrors it onto the slot as `data-scene`:
+
+- no attribute while the scene is not `ready` (static, loading, lost context): the slot draws a CSS phone bezel around the chat;
+- `arriving` while the scene is ready but the phone has not settled: the slot is invisible (the 3D phone is on its way);
+- `on` once the phone has settled over the slot: no CSS bezel, and the chat sits on a translucent dark layer over the 3D glass.
+
+The slot is the phone's *screen* rect (aspect 1440 / 3013, the 3D screen plane's), and the CSS bezel is drawn outside it.
 
 ## 4. Components
 
@@ -109,7 +115,7 @@ The email and links in the last answer come from `profile`, not repeated literal
 
 ## 6. Fallbacks
 
-- Static / no WebGL: stills 0..7, with 7 regenerated as the phone (`npm run capture:fallback`). Dip and return have no effect. The CSS bezel shows around the chat.
+- Static / no WebGL: stills 0..7. Still 7 is the background glow only: in capture mode a `slot` state hides its object, because the page's CSS phone stands in for it. Regenerate with `npm run capture:fallback`. Dip and return have no effect. The CSS bezel shows around the chat.
 - `?p=7` jumps to Contact.
 - Lite scene: same behaviour; the dip is a scale only.
 - Context loss: the slot falls back to the CSS bezel while the scene is not `ready`.
