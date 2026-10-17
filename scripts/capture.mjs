@@ -122,10 +122,11 @@ const aboutAt = (f) =>
 const contactAt = (f) =>
   `scrollY + document.querySelector('#contact').getBoundingClientRect().top - innerHeight * ${1 - f}`;
 
-// the lower parts, in page order; each run() leaves the page ready for a screenshot
+// the lower parts, in page order; each run() leaves the page ready for a screenshot after `wait` ms (default 1500)
 const SECTION_SHOTS = [
   {
     label: 'projects-heading',
+    wait: 3000,
     run: (page) =>
       scrollTo(page, `(() => { const r = document.querySelector('#projects .part').getBoundingClientRect(); return scrollY + r.top + r.height / 2 - innerHeight / 2; })()`),
   },
@@ -144,8 +145,8 @@ const SECTION_SHOTS = [
   { label: 'about-start', run: (page) => scrollTo(page, aboutAt(0)) },
   { label: 'about-middle', run: (page) => scrollTo(page, aboutAt(0.5)) },
   { label: 'about-end', run: (page) => scrollTo(page, aboutAt(0.99)) },
-  { label: 'contact-roll', run: (page) => scrollTo(page, contactAt(0.3)) },
-  { label: 'contact-lock', run: (page) => scrollTo(page, contactAt(0.88)) },
+  { label: 'contact-roll', wait: 3000, run: (page) => scrollTo(page, contactAt(0.3)) },
+  { label: 'contact-lock', wait: 3000, run: (page) => scrollTo(page, contactAt(0.88)) },
   { label: 'contact', run: (page) => scrollTo(page, 'document.documentElement.scrollHeight') },
   {
     label: 'contact-chat',
@@ -209,7 +210,7 @@ try {
         await sleep(SETTLE_MS);
         for (const shot of SECTION_SHOTS) {
           await shot.run(page);
-          await sleep(1500); // springs, the dip, the slot settling and the chat's typing
+          await sleep(shot.wait ?? 1500); // springs, the dip, the slot settling and the chat's typing
           const { data } = await page.send('Page.captureScreenshot', { format: 'png' });
           const out = `${outDir}sections-${name}-${theme}-${shot.label}.png`;
           writeFileSync(out, Buffer.from(data, 'base64'));

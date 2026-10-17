@@ -167,7 +167,9 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
     mesh.visible = !(opts.centered && slotW > 0.5);
     const offX = viewSize(camera.aspect).w / 2 + (fit?.scale ?? 0) * 1.2;
     const slotX = fit ? lerp(fit.x, offX, roll) : 0;
-    group.position.set(lerp(posX.x, slotX, settle), lerp(posY.x, fit?.y ?? 0, settle), 0);
+    // it rolls in at the normal placement's height and descends into the slot as it lands
+    const slotY = fit ? lerp(fit.y, place.y, roll) : 0;
+    group.position.set(lerp(posX.x, slotX, settle), lerp(posY.x, slotY, settle), 0);
 
     // resting angle (turned toward the text), a full spin and wobble through the liquid; in a slot, only the arrival roll
     const restA = objects[k].rest;

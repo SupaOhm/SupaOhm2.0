@@ -54,7 +54,8 @@ export function useScrollProgress(onSample: (s: ScrollSample) => void, initialP:
       const vh = window.innerHeight;
       callback.current({
         p: progressFromAnchors(y, anchors),
-        exit: sceneFade(y, exitTop, returnTop, vh),
+        // the scene is fully back by 30% of the phone's arrival, so the roll is visible
+        exit: sceneFade(y, exitTop, returnTop - vh * 0.45, vh),
         dip: dipAmount(y, dips, vh),
         arrive: arriveAmount(y, returnTop, vh),
       });

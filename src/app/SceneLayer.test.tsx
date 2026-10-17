@@ -94,6 +94,13 @@ describe('SceneLayer', () => {
     expect(screen.getByTestId('scene-fallback')).toHaveAttribute('src', '/fallback/7-light.webp');
   });
 
+  it("puts the slot state's still on the phone's side", () => {
+    vi.mocked(detectSceneMode).mockReturnValue('static');
+    window.history.replaceState(null, '', '/?p=7');
+    render(<SceneLayer items={SCENE_ITEMS} theme="light" />);
+    expect(screen.getByTestId('scene-fallback')).toHaveAttribute('data-side', 'right');
+  });
+
   it('clamps scroll progress to the available stills', () => {
     vi.mocked(detectSceneMode).mockReturnValue('static');
     render(<SceneLayer items={SCENE_ITEMS} theme="light" />);

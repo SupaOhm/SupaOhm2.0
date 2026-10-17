@@ -159,7 +159,9 @@ export function SceneLayer({ items, theme, capture = false }: { items: SceneItem
   return (
     <div className="scene" ref={layerRef} aria-hidden="true" data-status={status}>
       {status !== 'static' && <canvas key={generation} ref={canvasRef} />}
-      {status !== 'ready' && <StaticFallback state={fallbackState} theme={theme} />}
+      {status !== 'ready' && (
+        <StaticFallback state={fallbackState} theme={theme} side={items[fallbackState]?.slot ? 'right' : undefined} />
+      )}
     </div>
   );
 }
