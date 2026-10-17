@@ -1,4 +1,4 @@
-import { clamp01 } from '../scene/math';
+import { clamp01, smoothstep } from '../scene/math';
 
 /**
  * Page-space y that marks an anchor. Wide layouts use the element's centre. Narrow layouts
@@ -34,4 +34,34 @@ export function scrollYForProgress(p: number, anchors: number[], vh: number): nu
 /** 0 while the exit element's top is in the lower quarter or further down, 1 once it is in the upper quarter. */
 export function exitFade(y: number, exitTop: number, vh: number): number {
   return clamp01((y - (exitTop - vh * 0.25)) / (vh * 0.5));
+}
+
+/**
+ * 0..1 for part headings: 1 while a heading's centre is at y (the middle of the viewport), easing to 0
+ * at 0.45 of a viewport away. The scene melts the object down by this much so headings stay clear.
+ */
+export function dipAmount(y: number, centres: number[], vh: number): number {
+  let d = 0;
+  for (const c of centres) d = Math.max(d, clamp01(1 - Math.abs(y - c) / (vh * 0.45)));
+  return smoothstep(d, 0, 1);
+}
+
+/** How far the scene has faded out: in as the exit element arrives, back out as the return element arrives. */
+export function sceneFade(y: number, exitTop: number, returnTop: number, vh: number): number {
+  return exitFade(y, exitTop, vh) * (1 - exitFade(y, returnTop, vh));
+}
+
+/**
+ * The contact phone's arrival, 0..1 over one viewport of scrolling: it starts with the return element's top
+ * half a screen below the middle and ends with it at the top of the screen (the bottom of the page).
+ */
+export function arriveAmount(y: number, returnTop: number, vh: number): number {
+  return clamp01((y - (returnTop - vh / 2)) / vh);
+}
+
+export type PhoneStage = 'off' | 'lock' | 'open';
+
+/** The contact phone's screen along its arrival: dark, the lock screen from halfway, unlocked once landed. */
+export function phoneStage(arrive: number): PhoneStage {
+  return arrive < 0.5 ? 'off' : arrive < 0.97 ? 'lock' : 'open';
 }
