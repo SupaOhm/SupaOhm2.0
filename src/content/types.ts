@@ -20,8 +20,7 @@ export interface FeaturedItem {
   body: string[];
   figures: string[];
   links: Link[];
-  /** null: text only, because the object is shown elsewhere (ESNIDSaaS appears in the Best Paper section). */
-  object: DeviceKind | null;
+  object: DeviceKind;
   pics: Pic[];
 }
 
@@ -44,7 +43,7 @@ export interface MoreProject {
   href?: string;
 }
 
-/** The Best Paper section after the hero: the award, with the paper on the e-reader. */
+/** The Best Paper section after the hero: the award, with the paper's first page framed. */
 export interface Award {
   title: string;
   venue: string;

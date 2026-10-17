@@ -200,11 +200,6 @@ p {
   margin-top: 20px;
 }
 
-/* a text-only entry: its object is shown elsewhere, so it needs no reserved space */
-.entry {
-  padding: 22vh 8vw;
-}
-
 /* project rows */
 .rows {
   list-style: none;
@@ -318,9 +313,6 @@ p {
     align-items: flex-start;
     justify-content: flex-start;
     padding: 55vh 24px 16vh;
-  }
-  .entry {
-    padding: 16vh 24px;
   }
   .copy,
   .rows {

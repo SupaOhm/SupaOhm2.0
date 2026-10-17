@@ -18,9 +18,6 @@ import { SceneLayer } from './SceneLayer';
 import { SCENE_ITEMS } from './sceneItems';
 import { useTheme } from './theme';
 
-// Scroll anchors follow the objects: 0 is the hero, 1 the Best Paper section, then each featured item with an object.
-const ANCHORS = new Map(featured.filter((f) => f.object).map((f, i) => [f.id, i + 2]));
-
 export function App() {
   const { theme, toggle } = useTheme();
   // ?capture=1 renders only the centred object, for scripts/capture.mjs
@@ -39,13 +36,13 @@ export function App() {
           return (
             <section key={id} id={id} aria-labelledby={`${id}-title`}>
               <PartHeading part={part} />
+              {/* anchors: 0 is the hero, 1 the Best Paper section, then the featured items */}
               {featured.map(
-                (item) =>
-                  item.group === part.group && <FeatureSection key={item.id} item={item} anchor={ANCHORS.get(item.id)} />,
+                (item, i) => item.group === part.group && <FeatureSection key={item.id} item={item} anchor={i + 2} />,
               )}
               {part.group === 'Projects' && (
                 <>
-                  <ProjectRows rows={projectRows} anchor={ANCHORS.size + 2} />
+                  <ProjectRows rows={projectRows} anchor={featured.length + 2} />
                   <MoreProjects items={moreProjects} />
                 </>
               )}

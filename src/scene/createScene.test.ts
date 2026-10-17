@@ -10,7 +10,7 @@ describe('createScene', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('rejects an item list that does not match the palette', () => {
-    expect(() => createScene(document.createElement('canvas'), items.slice(0, 3), opts)).toThrow(/expects 7 items/);
+    expect(() => createScene(document.createElement('canvas'), items.slice(0, 3), opts)).toThrow(/expects 8 items/);
   });
 
   it('throws when WebGL is unavailable, so the caller can show still images', () => {

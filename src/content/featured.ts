@@ -44,8 +44,8 @@ export const featured: FeaturedItem[] = [
     ],
     figures: ['0.9557 accuracy and 0.8479 F1 on CIC-IDS2017.'],
     links: [],
-    object: null,
-    pics: [],
+    object: 'reader',
+    pics: [{ src: '/shots/esnidsaas.webp' }],
   },
   {
     id: 'ma-zerophish',

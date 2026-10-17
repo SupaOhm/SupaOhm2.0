@@ -82,14 +82,14 @@ describe('SceneLayer', () => {
     vi.mocked(detectSceneMode).mockReturnValue('static');
     window.history.replaceState(null, '', '/?p=9');
     render(<SceneLayer items={SCENE_ITEMS} theme="light" />);
-    expect(screen.getByTestId('scene-fallback')).toHaveAttribute('src', '/fallback/6-light.webp');
+    expect(screen.getByTestId('scene-fallback')).toHaveAttribute('src', '/fallback/7-light.webp');
   });
 
   it('clamps scroll progress to the available stills', () => {
     vi.mocked(detectSceneMode).mockReturnValue('static');
     render(<SceneLayer items={SCENE_ITEMS} theme="light" />);
-    act(() => scroll.sample!({ p: 6.4, exit: 0 }));
-    expect(screen.getByTestId('scene-fallback')).toHaveAttribute('src', '/fallback/6-light.webp');
+    act(() => scroll.sample!({ p: 7.4, exit: 0 }));
+    expect(screen.getByTestId('scene-fallback')).toHaveAttribute('src', '/fallback/7-light.webp');
     act(() => scroll.sample!({ p: -0.8, exit: 0 }));
     expect(screen.getByTestId('scene-fallback')).toHaveAttribute('src', '/fallback/0-light.webp');
   });

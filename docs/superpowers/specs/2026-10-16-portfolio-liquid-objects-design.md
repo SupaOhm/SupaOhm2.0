@@ -23,15 +23,15 @@ The approved reference prototype is `.superpowers/brainstorm/proto-liquid.html`.
 | # | Section | Object | Content |
 |---|---------|--------|---------|
 | 0 | Hero | pebble | Name, very large. One line: "Computer engineering student at SIIT, Thammasat. I build AI systems, security tooling, and the distributed infrastructure under both." |
-| 1 | Best Paper | e-reader | The award (IEEE IMC 2026, at CISOSE 2026 in Fukuoka), one line on ESNIDSaaS, and a link to its full entry in Research. The e-reader shows the paper. |
+| 1 | Best Paper | frame | The award (IEEE IMC 2026, at CISOSE 2026 in Fukuoka), one line on ESNIDSaaS, and a link to its full entry in Research. The frame shows the paper's first page, cropped to the title. |
 | 2 | Experience: AI Developer Intern, Mizuhada Group (Jun–Jul 2026) | laptop | "Built an enterprise multi-agent RAG assistant for company knowledge and live warehouse inventory." Public facts only: document lookup time down 91.3% (54.54 s to 4.728 s), 100% source matching in evaluation, warehouse access restricted to 12 read-only query tools. The screen shows a mock or blurred UI that the owner supplies, never real company data. |
 | 3 | Experience: UX/UI Research & Design Intern, Baka Co. (Aug 2025 onward) | frame | Baka Index redesign of a farming analytics platform on Google Earth Engine, from stakeholder research to high-fidelity mockups. |
-| – | Research: ESNIDSaaS | none (text only) | Best Paper Award, IEEE IMC 2026 (CISOSE 2026, Fukuoka). Cloud-native multi-tenant intrusion detection: Kafka ingestion, Spark Structured Streaming, hybrid detection. 0.9557 accuracy on CIC-IDS2017. |
-| 4 | Research: MA-ZeroPhish | phone | Ongoing research at SIIT. Five specialist agents plus a Moderator and a Judge, for zero-day phishing detection. |
-| 5 | Projects: AckLab | tablet | An interactive networking learning platform. GitHub link. |
-| 6 | Projects list, More projects | sphere (small) | The sphere sits beside the project list, then fades out as the More projects list begins, so no list text sits under it. More projects, About and Contact have no 3D. See below. |
+| 4 | Research: ESNIDSaaS | e-reader | Best Paper Award, IEEE IMC 2026 (CISOSE 2026, Fukuoka). Cloud-native multi-tenant intrusion detection: Kafka ingestion, Spark Structured Streaming, hybrid detection. 0.9557 accuracy on CIC-IDS2017. |
+| 5 | Research: MA-ZeroPhish | phone | Ongoing research at SIIT. Five specialist agents plus a Moderator and a Judge, for zero-day phishing detection. |
+| 6 | Projects: AckLab | tablet | An interactive networking learning platform. GitHub link. |
+| 7 | Projects list, More projects | sphere (small) | The sphere sits beside the project list, then fades out as the More projects list begins, so no list text sits under it. More projects, About and Contact have no 3D. See below. |
 
-Each part (Experience, Research, Projects, About, Contact) opens with a large heading in plain words, never an all-caps eyebrow label, followed by one plain line describing the part. Experience comes before Research. Only a short Best Paper section, with the e-reader, sits above it; the full ESNIDSaaS entry is text only in Research, so the paper appears once in 3D (owner decision, 2026-10-17).
+Each part (Experience, Research, Projects, About, Contact) opens with a large heading in plain words, never an all-caps eyebrow label, followed by one plain line describing the part. Experience comes before Research. Only a short Best Paper section, with the paper framed, sits above it; each research item in Research has its own object (owner decision, 2026-10-17).
 
 **Projects list** (compact rows: name, one line, tech, GitHub link): FastForm, Full-Stack Expense Tracker, Lost and Found Management System.
 
@@ -61,7 +61,7 @@ Each part (Experience, Research, Projects, About, Contact) opens with a large he
 
 ## 5. Scene behaviour
 
-- **States:** N = 7 object states, in order: pebble (hero), e-reader (Best Paper), laptop, frame, phone, tablet, sphere (Projects list).
+- **States:** N = 8 object states, in order: pebble (hero), frame (Best Paper), laptop, frame, e-reader, phone, tablet, sphere (Projects list).
 - **Progress:** measured from the DOM, not from a uniform section height. Each state k has an anchor element (the hero, the five featured sections, and the Projects heading). `c_k` is the anchor's vertical centre in page coordinates. With `y = scrollY + innerHeight/2`, `p = k + (y - c_k) / (c_{k+1} - c_k)` for `c_k ≤ y < c_{k+1}`, clamped to [0, N-1]. Anchors are re-measured on resize and when fonts or images finish loading.
 - **Smoothing:** frame-rate independent damping, `p_s += (p - p_s) · (1 - exp(-dt · 3))` with dt in seconds. The springs (position and swell) also integrate with dt.
 - **Step timing:** within the step from k to k+1, with `g = clamp((f - 0.2) / 0.6)`:

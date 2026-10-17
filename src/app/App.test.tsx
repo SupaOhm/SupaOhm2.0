@@ -25,23 +25,21 @@ describe('App', () => {
     ).toEqual(['Mizuhada Group', 'Baka Co.', 'ESNIDSaaS', 'MA-ZeroPhish', 'AckLab']);
   });
 
-  it('puts Best Paper right after the hero, with the e-reader, linked to the full entry', () => {
+  it('puts Best Paper right after the hero, linked to the full entry', () => {
     const { container } = render(<App />);
     const section = container.querySelector<HTMLElement>('#best-paper')!;
     expect(section.previousElementSibling).toHaveAttribute('id', 'top');
     expect(section).toHaveAttribute('data-anchor', '1');
     expect(section).toHaveTextContent('IEEE IMC 2026');
     const link = within(section).getByRole('link', { name: 'Read about the research' });
-    const entry = container.querySelector(link.getAttribute('href')!);
-    expect(entry).toHaveAttribute('aria-labelledby', 'esnidsaas-title');
-    expect(entry).not.toHaveAttribute('data-anchor');
+    expect(container.querySelector(link.getAttribute('href')!)).toHaveAttribute('aria-labelledby', 'esnidsaas-title');
   });
 
   it('marks one scroll anchor per object state, alternating sides', () => {
     const { container } = render(<App />);
     const anchors = [...container.querySelectorAll<HTMLElement>('[data-anchor]')];
-    expect(anchors.map((el) => el.dataset.anchor)).toEqual(['0', '1', '2', '3', '4', '5', '6']);
-    expect(anchors.map((el) => el.dataset.side)).toEqual(['left', 'right', 'left', 'right', 'left', 'right', 'left']);
+    expect(anchors.map((el) => el.dataset.anchor)).toEqual(['0', '1', '2', '3', '4', '5', '6', '7']);
+    expect(anchors.map((el) => el.dataset.side)).toEqual(['left', 'right', 'left', 'right', 'left', 'right', 'left', 'right']);
     expect(container.querySelector('[data-scene-exit]')).toHaveAttribute('aria-labelledby', 'more-title');
   });
 

@@ -103,7 +103,7 @@ describe('content', () => {
 
   it('lists the five featured items in page order', () => {
     expect(featured.map((f) => f.id)).toEqual(['mizuhada', 'baka', 'esnidsaas', 'ma-zerophish', 'acklab']);
-    expect(featured.map((f) => f.object)).toEqual(['laptop', 'frame', null, 'phone', 'tablet']);
+    expect(featured.map((f) => f.object)).toEqual(['laptop', 'frame', 'reader', 'phone', 'tablet']);
   });
 
   it('keeps featured items grouped in the order of the parts', () => {

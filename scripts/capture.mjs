@@ -14,7 +14,7 @@ import sharp from 'sharp';
 const CHROME = process.env.CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const BASE = process.env.BASE_URL ?? 'http://127.0.0.1:4173/';
 const PORT = 9333;
-const STATES = 7;
+const STATES = 8;
 const THEMES = ['light', 'dark'];
 const SETTLE_MS = 4000; // fonts, textures and the first frames (the scene snaps under ?p=)
 const path = (rel) => fileURLToPath(new URL(rel, import.meta.url));
