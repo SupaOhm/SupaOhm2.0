@@ -3,10 +3,11 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { bestPaper } from '../src/content/award';
+import { chat } from '../src/content/chat';
 import { featured } from '../src/content/featured';
 import { parts } from '../src/content/parts';
 import { profile } from '../src/content/profile';
-import { moreProjects, projectRows } from '../src/content/projects';
+import { projects } from '../src/content/projects';
 
 // npm test runs from the repo root; import.meta.url is an http URL under the jsdom environment.
 const ROOT = process.cwd();
@@ -80,8 +81,7 @@ describe('content', () => {
     profile.github.href,
     profile.linkedin.href,
     ...featured.flatMap((f) => f.links.map((l) => l.href)),
-    ...projectRows.map((r) => r.href),
-    ...moreProjects.flatMap((m) => (m.href ? [m.href] : [])),
+    ...projects.flatMap((p) => (p.href ? [p.href] : [])),
   ];
 
   it('links only to the owner’s public profiles and repositories, over https', () => {
@@ -106,8 +106,20 @@ describe('content', () => {
     expect(featured.map((f) => f.object)).toEqual(['laptop', 'frame', 'reader', 'phone', 'tablet']);
   });
 
+  it('lists all ten projects, the three with a stack and a repository first', () => {
+    expect(projects).toHaveLength(10);
+    expect(projects.slice(0, 3).every((p) => p.tech && p.href)).toBe(true);
+  });
+
   it('keeps featured items grouped in the order of the parts', () => {
     const groups = [...new Set(featured.map((f) => f.group))];
     expect(groups).toEqual(parts.map((p) => p.group));
+  });
+
+  it('links chat answers only to sections on the page, the email, or the owner’s profiles', () => {
+    for (const href of chat.flatMap((t) => t.links.map((l) => l.href))) {
+      if (href.startsWith('#') || href === `mailto:${profile.email}`) continue;
+      expect(hrefs, href).toContain(href);
+    }
   });
 });

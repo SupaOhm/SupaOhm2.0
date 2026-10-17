@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { LAP } from './laptop';
 import { OBJECTS, blob, book, resolveObject } from './index';
+import { phone } from './phone';
 import { READER } from './reader';
 import type { SceneObject, Vec3 } from './types';
 
@@ -92,4 +93,9 @@ describe('resolveObject (book rule)', () => {
     expect(resolveObject('phone', 0)).toBe(OBJECTS.phone);
     expect(resolveObject('laptop', 3)).toBe(OBJECTS.laptop);
   });
+});
+
+it('gives the phone a screen with the aspect of the page’s phone slot (1440 / 3013 in styles.css)', () => {
+  const [w, h] = phone.planes[0].size;
+  expect(w / h).toBeCloseTo(1440 / 3013, 3);
 });

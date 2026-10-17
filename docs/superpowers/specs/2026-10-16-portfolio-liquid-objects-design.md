@@ -31,6 +31,8 @@ The approved reference prototype is `.superpowers/brainstorm/proto-liquid.html`.
 | 6 | Projects: AckLab | tablet | An interactive networking learning platform. GitHub link. |
 | 7 | Projects list, More projects | sphere (small) | The sphere sits beside the project list, then fades out as the More projects list begins, so no list text sits under it. More projects, About and Contact have no 3D. See below. |
 
+State 7 is now the contact phone; see 2026-10-18-lower-parts-design.md.
+
 Each part (Experience, Research, Projects, About, Contact) opens with a large heading in plain words, never an all-caps eyebrow label, followed by one plain line describing the part. Experience comes before Research. Only a short Best Paper section, with the paper framed, sits above it; each research item in Research has its own object (owner decision, 2026-10-17).
 
 **Projects list** (compact rows: name, one line, tech, GitHub link): FastForm, Full-Stack Expense Tracker, Lost and Found Management System.

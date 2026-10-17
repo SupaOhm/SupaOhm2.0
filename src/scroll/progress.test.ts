@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { anchorPoint, exitFade, progressFromAnchors, scrollYForProgress } from './progress';
+import { anchorPoint, arriveAmount, dipAmount, exitFade, phoneStage, progressFromAnchors, sceneFade, scrollYForProgress } from './progress';
 
 describe('progressFromAnchors', () => {
   const c = [100, 300, 700];
@@ -60,5 +60,55 @@ describe('exitFade', () => {
 
   it('stays 0 when there is no exit element', () => {
     expect(exitFade(5000, Infinity, 800)).toBe(0);
+  });
+});
+
+describe('dipAmount', () => {
+  it('is 1 with a heading centred, 0 from 0.45 of a viewport away', () => {
+    expect(dipAmount(2000, [2000], 800)).toBe(1);
+    expect(dipAmount(2000 + 180, [2000], 800)).toBeCloseTo(0.5);
+    expect(dipAmount(2000 + 360, [2000], 800)).toBe(0);
+    expect(dipAmount(2000 - 500, [2000], 800)).toBe(0);
+  });
+
+  it('follows the nearest heading', () => {
+    expect(dipAmount(5000, [2000, 5000], 800)).toBe(1);
+  });
+
+  it('is 0 without headings', () => {
+    expect(dipAmount(100, [], 800)).toBe(0);
+  });
+});
+
+describe('sceneFade', () => {
+  it('is 0 before the exit, 1 between exit and return, 0 again once the return arrives', () => {
+    expect(sceneFade(1000, 3000, 9000, 800)).toBe(0);
+    expect(sceneFade(5000, 3000, 9000, 800)).toBe(1);
+    expect(sceneFade(9400, 3000, 9000, 800)).toBe(0);
+  });
+
+  it('never comes back without a return element', () => {
+    expect(sceneFade(20000, 3000, Infinity, 800)).toBe(1);
+  });
+});
+
+describe('arriveAmount', () => {
+  it('runs from 0 to 1 over one viewport, ending with the return element at the top of the screen', () => {
+    expect(arriveAmount(9000 - 400, 9000, 800)).toBe(0);
+    expect(arriveAmount(9000, 9000, 800)).toBeCloseTo(0.5);
+    expect(arriveAmount(9000 + 400, 9000, 800)).toBe(1);
+  });
+
+  it('is 0 without a return element', () => {
+    expect(arriveAmount(20000, Infinity, 800)).toBe(0);
+  });
+});
+
+describe('phoneStage', () => {
+  it('is dark, then locked from halfway, then open once the phone has landed', () => {
+    expect(phoneStage(0.2)).toBe('off');
+    expect(phoneStage(0.5)).toBe('lock');
+    expect(phoneStage(0.96)).toBe('lock');
+    expect(phoneStage(0.97)).toBe('open');
   });
 });

@@ -1,6 +1,7 @@
-import type { MoreProject, ProjectRow } from './types';
+import type { Project } from './types';
 
-export const projectRows: ProjectRow[] = [
+// The wall lists these in order: the three with a stack and a repository first.
+export const projects: Project[] = [
   {
     name: 'FastForm',
     line: 'Submits a Google Form with one direct HTTP request instead of a full browser.',
@@ -19,9 +20,6 @@ export const projectRows: ProjectRow[] = [
     tech: 'PHP, MySQL, Bootstrap',
     href: 'https://github.com/SupaOhm/Lost-and-Found-Management-System',
   },
-];
-
-export const moreProjects: MoreProject[] = [
   { name: 'NoSleep CLI', line: 'Keeps a Windows machine awake through long tasks.', href: 'https://github.com/SupaOhm/NoSleep-CLI' },
   { name: 'RevRace', line: 'GPS performance tracking for the car you actually drive.' },
   { name: 'DressMe', line: 'Outfit suggestions from your own photos, a software engineering project.' },

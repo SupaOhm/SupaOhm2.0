@@ -3,6 +3,7 @@
   --ink: #1d1d1f;
   --dim: #515154;
   --line: #d2d2d7;
+  --faint: #c7c7cc;
   --btn: #e8e8ed;
   --bar: rgb(245 245 247 / 0.72);
   color-scheme: light;
@@ -14,6 +15,7 @@
     --ink: #f5f5f7;
     --dim: #a1a1a6;
     --line: #2c2c2e;
+    --faint: #3a3a3c;
     --btn: #1d1d1f;
     --bar: rgb(0 0 0 / 0.6);
     color-scheme: dark;
@@ -25,6 +27,7 @@
   --ink: #f5f5f7;
   --dim: #a1a1a6;
   --line: #2c2c2e;
+  --faint: #3a3a3c;
   --btn: #1d1d1f;
   --bar: rgb(0 0 0 / 0.6);
   color-scheme: dark;
@@ -200,69 +203,79 @@ p {
   margin-top: 20px;
 }
 
-/* project rows */
-.rows {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  max-width: min(560px, 42vw);
-}
-.rows li {
-  padding: 26px 0;
-  border-top: 1px solid var(--line);
-}
-.rows li:last-child {
-  border-bottom: 1px solid var(--line);
-}
-.row-name {
-  font-size: 30px;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
-  margin-bottom: 8px;
-}
-.tech {
-  font-size: 15px;
-}
-
-/* more projects */
-.more {
+/* project wall: every project as one list of names; the active one turns solid */
+.wall {
   position: relative;
-  padding: 14vh 8vw;
+  padding: 14vh 8vw 20vh;
 }
-.subtitle {
-  font-size: clamp(32px, 3.5vw, 48px);
-  line-height: 1;
-  margin-bottom: 36px;
-}
-.more-list {
+.wall-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 28px 48px;
-  max-width: 1100px;
 }
-.more-list a,
-.more-name {
-  font-weight: 600;
+.wall-name {
+  display: inline-block;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: clamp(40px, 6vw, 96px);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+  text-align: left;
+  text-decoration: none;
+  color: var(--faint);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.wall-name:hover,
+.wall-name:focus-visible,
+.wall-name[data-active] {
   color: var(--ink);
 }
-.more-list p {
-  font-size: 16px;
-  margin-top: 4px;
+/* inverted: dark on the light theme, light on the dark one */
+.wall-card {
+  max-width: 280px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 15px;
+  line-height: 1.4;
+}
+.wall-card p {
+  margin: 0 0 6px;
+  color: inherit;
+}
+.wall-card p:last-child {
+  margin-bottom: 0;
+}
+.wall-card a {
+  color: inherit;
+}
+.wall-tech {
+  font-size: 13px;
+  opacity: 0.65;
+}
+.wall-card-float {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  pointer-events: none;
+  visibility: hidden; /* until the first frame positions it */
+}
+.wall-card-inline {
+  margin: 10px 0 18px;
+}
+@media (max-width: 799px) {
+  .wall {
+    padding: 12vh 24px 16vh;
+  }
 }
 
 /* about */
-.about {
-  padding: 16vh 8vw;
-}
-.about-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 48px 64px;
-  max-width: 1200px;
-}
 .about h3 {
   font-size: 22px;
   letter-spacing: -0.02em;
@@ -285,18 +298,241 @@ p {
   font-size: 16px;
 }
 
-/* contact */
-.contact {
-  min-height: 80vh;
+/* about: wide screens pin the section for four screens of scrolling and slide the panels sideways */
+.about {
+  position: relative;
+}
+.about-sticky {
+  padding: 16vh 8vw;
+}
+.about-track {
+  display: flex;
+  gap: 4vw;
+}
+.about-panel {
+  flex: none;
+  width: min(72vw, 880px);
+}
+.about-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 4px 40px;
+}
+.about-honor {
+  font-size: clamp(28px, 3vw, 44px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+.about-dots {
+  display: none;
+}
+.about[data-mode='rail'] {
+  height: 400vh;
+}
+.about[data-mode='rail'] .about-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 0 8vw 12vh;
+  padding-top: 10vh;
+  padding-bottom: 6vh;
+}
+.about[data-mode='rail'] .about-track {
+  will-change: transform;
+}
+.about[data-mode='stack'] .about-track {
+  flex-direction: column;
+  gap: 56px;
+}
+.about[data-mode='stack'] .about-panel {
+  width: auto;
+  max-width: 880px;
+}
+/* narrow: no pinning; the panels swipe sideways with snapping */
+@media (max-width: 799px) {
+  .about-sticky {
+    padding: 16vh 24px;
+  }
+  .about[data-mode='rail'] {
+    height: auto;
+  }
+  .about[data-mode='rail'] .about-sticky {
+    position: static;
+    height: auto;
+    overflow: visible;
+    display: block;
+    padding: 16vh 24px;
+  }
+  .about[data-mode='rail'] .about-track {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 24px; /* snap panels to the page gutter, not the screen edge */
+    scrollbar-width: none;
+    margin: 0 -24px;
+    padding: 0 24px;
+    gap: 16px;
+  }
+  .about[data-mode='rail'] .about-panel {
+    width: calc(100vw - 64px);
+    scroll-snap-align: start;
+  }
+  .about[data-mode='rail'] .about-dots {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+  }
+}
+.about-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line);
+}
+.about-dots span[data-on] {
+  background: var(--ink);
+}
+
+/* contact: the copy, and a phone whose screen is the chat */
+.contact {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6vw;
+  padding: 12vh 8vw;
 }
 .contact-email {
   font-size: clamp(24px, 3vw, 36px);
   font-weight: 600;
   letter-spacing: -0.02em;
+}
+/* the 3D phone's screen (aspect checked in objects.test.ts). With no data-scene, the scene is not drawing,
+   so the slot draws its own bezel; "arriving" hides it while the 3D phone flies in; "on" sits on the 3D glass */
+.phone-slot {
+  position: relative;
+  width: clamp(220px, 22vw, 300px);
+  aspect-ratio: 1440 / 3013;
+  margin-right: 4vw;
+  border-radius: 24px;
+  overflow: hidden;
+  background: #000;
+  box-shadow:
+    0 0 0 12px #1d1d1f,
+    0 30px 60px rgb(0 0 0 / 0.28);
+  transition: opacity 0.3s;
+}
+.phone-slot[data-scene='arriving'] {
+  opacity: 0;
+}
+.phone-slot[data-scene='on'] {
+  background: rgb(0 0 0 / 0.55);
+  box-shadow: none;
+}
+.chat {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  line-height: 1.35;
+  letter-spacing: -0.005em;
+}
+.chat-head {
+  margin: 0;
+  padding: 16px 12px 8px;
+  text-align: center;
+  font-weight: 700;
+  color: #f5f5f7;
+}
+.chat-log {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 10px;
+}
+.bubble {
+  margin: 0;
+  max-width: 84%;
+  padding: 7px 11px;
+  border-radius: 16px;
+  color: #f5f5f7;
+}
+.bubble.them {
+  align-self: flex-start;
+  background: #2c2c2e;
+}
+.bubble.me {
+  align-self: flex-end;
+  background: #0a84ff;
+  color: #fff;
+}
+.bubble.link {
+  align-self: flex-start;
+  border: 1px solid #0a84ff;
+  color: #64a8ff;
+  font-weight: 600;
+  text-decoration: none;
+}
+.typing .dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 2px;
+  border-radius: 50%;
+  background: #a1a1a6;
+  animation: chat-dot 1s infinite;
+}
+.typing .dot:nth-child(3) {
+  animation-delay: 0.15s;
+}
+.typing .dot:nth-child(4) {
+  animation-delay: 0.3s;
+}
+@keyframes chat-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+.chat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px;
+}
+.chat-chips button {
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  color: #64a8ff;
+  background: none;
+  border: 1px solid #0a84ff;
+  border-radius: 999px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.chat-chips button[aria-disabled='true'] {
+  opacity: 0.4;
+  cursor: default;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* narrow: the top 55vh of each object section stays empty for the object */
@@ -314,8 +550,7 @@ p {
     justify-content: flex-start;
     padding: 55vh 24px 16vh;
   }
-  .copy,
-  .rows {
+  .copy {
     max-width: 560px;
   }
   /* measured in Inter Tight 800: "Prayongyam" is 5.56 em wide, "MA-ZeroPhish" 6.5 em; keep both inside the gutters */
@@ -331,17 +566,19 @@ p {
   .part-title {
     font-size: min(64px, calc((100vw - 48px) / 5.8));
   }
-  .more,
-  .about {
-    padding-left: 24px;
-    padding-right: 24px;
-  }
   .contact {
-    padding: 0 24px 12vh;
+    grid-template-columns: 1fr;
+    gap: 48px;
+    padding: 16vh 24px 12vh;
+  }
+  .phone-slot {
+    justify-self: center;
+    width: min(56vw, 230px);
+    margin-right: 0;
   }
 }
 
-/* 3D layer: fixed behind the text, faded out (and paused) as More projects arrives */
+/* 3D layer: fixed behind the text, faded out (and paused) from the project wall until Contact */
 .scene {
   position: fixed;
   inset: 0;
@@ -378,4 +615,27 @@ p {
     width: min(86vw, 50vh);
     transform: translate(-50%, -50%);
   }
+}
+
+/* the screen follows the arrival (data-stage, set by SceneLayer): dark, the lock screen from halfway, the chat once landed.
+   With the scene running (data-scene), the 3D screen paints the lock screen and the slot only ever shows the chat */
+.phone-lock {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: opacity 0.4s;
+}
+.phone-slot[data-stage='off'] .phone-lock,
+.phone-slot[data-stage='open'] .phone-lock,
+.phone-slot[data-scene] .phone-lock {
+  opacity: 0;
+}
+.phone-slot .chat {
+  transition: opacity 0.3s;
+}
+/* hidden to the eye only: the chips stay in the tab order, and focusing one scrolls the phone in (Contact.tsx) */
+.phone-slot:not([data-stage='open']) .chat {
+  opacity: 0;
+  pointer-events: none;
 }

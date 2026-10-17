@@ -17,6 +17,23 @@ const FRAG = /* glsl */ `
     gl_FragColor = vec4(texture2D(uImg, vUv * uScale + uOffset).rgb, uAmt);
   }`;
 
+/** The screen-face material: a texture in rounded corners, faded by uAmt. */
+export function screenMaterial(aspect: number): ShaderMaterial {
+  return new ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    uniforms: {
+      uImg: { value: null },
+      uAmt: { value: 0 },
+      uPlaneAsp: { value: aspect },
+      uScale: { value: new Vector2(1, 1) },
+      uOffset: { value: new Vector2(0, 0) },
+    },
+    vertexShader: VERT,
+    fragmentShader: FRAG,
+  });
+}
+
 export interface PictureSet {
   group: Group;
   setAmount(a: number): void;
@@ -33,19 +50,7 @@ export function createPictures(planes: PlaneSpec[], pics: ScenePic[], label: str
     const pic = pics[plane.pic];
     if (!pic) continue;
     const aspect = plane.size[0] / plane.size[1];
-    const material = new ShaderMaterial({
-      transparent: true,
-      depthWrite: false,
-      uniforms: {
-        uImg: { value: null },
-        uAmt: { value: 0 },
-        uPlaneAsp: { value: aspect },
-        uScale: { value: new Vector2(1, 1) },
-        uOffset: { value: new Vector2(0, 0) },
-      },
-      vertexShader: VERT,
-      fragmentShader: FRAG,
-    });
+    const material = screenMaterial(aspect);
     const mesh = new Mesh(new PlaneGeometry(1, 1), material);
     mesh.renderOrder = 1; // always after the object: in lite mode both are transparent and depth-sorting can put the screen first
     mesh.position.set(...plane.pos);

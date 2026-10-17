@@ -1,9 +1,13 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
-import { afterEach, beforeEach } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 import { mockMatchMedia } from './matchMedia';
 
-beforeEach(() => mockMatchMedia());
+beforeEach(() => {
+  mockMatchMedia();
+  // jsdom has no canvas: return no context quietly instead of logging "not implemented"
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+});
 
 afterEach(() => {
   cleanup();

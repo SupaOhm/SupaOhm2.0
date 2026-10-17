@@ -30,16 +30,11 @@ export interface Part {
   line: string;
 }
 
-export interface ProjectRow {
+/** One name on the project wall. `tech` and `href` are shown on its card when present. */
+export interface Project {
   name: string;
   line: string;
-  tech: string;
-  href: string;
-}
-
-export interface MoreProject {
-  name: string;
-  line: string;
+  tech?: string;
   href?: string;
 }
 
@@ -72,4 +67,11 @@ export interface About {
   skills: SkillGroup[];
   activities: { name: string; detail: string }[];
   languages: string[];
+}
+
+/** One question chip in the contact phone's chat, with its answer written in advance. */
+export interface ChatTopic {
+  ask: string;
+  answer: string;
+  links: Link[];
 }
