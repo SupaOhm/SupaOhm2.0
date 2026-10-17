@@ -13,7 +13,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "capture:fallback": "node scripts/capture.mjs fallback",
-    "capture:review": "node scripts/capture.mjs review"
+    "capture:review": "node scripts/capture.mjs review",
+    "capture:meta": "node scripts/capture.mjs meta"
   },
   "dependencies": {
     "@fontsource/inter-tight": "5.3.0",

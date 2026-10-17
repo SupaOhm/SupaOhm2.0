@@ -2,8 +2,10 @@
 //   node scripts/capture.mjs fallback  → public/fallback/<state>-<theme>.webp (commit these)
 //   node scripts/capture.mjs review    → review/<size>-<theme>-p<state>.png and review/desktop-static-p1.png
 //                                        (manual review, git-ignored)
+//   node scripts/capture.mjs meta      → public/og.png, public/favicon-32.png, public/apple-touch-icon.png
+//                                        (run after fallback: they are cut from the hero pebble still)
 import { spawn } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -80,10 +82,50 @@ async function shot(page, url, [width, height], mobile, out) {
   writeFileSync(out, Buffer.from(data, 'base64'));
 }
 
+const dataUri = (rel, type) => `data:${type};base64,${readFileSync(path(rel)).toString('base64')}`;
+
+/** The link-preview card: the hero name and line beside the pebble, 1200 × 630. */
+function ogHtml() {
+  const font = dataUri('../node_modules/@fontsource/inter-tight/files/inter-tight-latin-800-normal.woff2', 'font/woff2');
+  const font600 = dataUri('../node_modules/@fontsource/inter-tight/files/inter-tight-latin-600-normal.woff2', 'font/woff2');
+  const pebble = dataUri('../public/fallback/0-light.webp', 'image/webp');
+  return `<!doctype html><html><head><style>
+    @font-face { font-family: 'Inter Tight'; font-weight: 800; src: url(${font}) format('woff2'); }
+    @font-face { font-family: 'Inter Tight'; font-weight: 600; src: url(${font600}) format('woff2'); }
+    html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; background: #f5f5f7; }
+    body { font-family: 'Inter Tight', sans-serif; color: #1d1d1f; letter-spacing: -0.01em; }
+    img { position: absolute; right: -40px; top: 15px; width: 600px; height: 600px;
+      -webkit-mask-image: radial-gradient(closest-side, #000 72%, transparent); }
+    .copy { position: absolute; left: 80px; top: 0; bottom: 0; width: 640px; display: flex; flex-direction: column; justify-content: center; }
+    h1 { margin: 0; font-size: 116px; line-height: 0.86; font-weight: 800; letter-spacing: -0.035em; }
+    p { margin: 34px 0 0; font-size: 27px; line-height: 1.35; font-weight: 600; color: #515154; }
+    strong { color: #1d1d1f; }
+  </style></head><body>
+    <img src="${pebble}" alt="">
+    <div class="copy">
+      <h1>Supakorn<br>Prayongyam</h1>
+      <p>Computer engineering student at SIIT, Thammasat. AI systems, security tooling and distributed infrastructure.</p>
+      <p><strong>Best Paper Award, IEEE IMC 2026</strong></p>
+    </div>
+  </body></html>`;
+}
+
 const mode = process.argv[2];
-if (mode !== 'fallback' && mode !== 'review') {
-  console.error('Usage: node scripts/capture.mjs <fallback|review>');
+if (mode !== 'fallback' && mode !== 'review' && mode !== 'meta') {
+  console.error('Usage: node scripts/capture.mjs <fallback|review|meta>');
   process.exit(1);
+}
+
+if (mode === 'meta') {
+  const pub = path('../public/');
+  await sharp(`${pub}favicon.svg`, { density: 300 }).resize(32, 32).png().toFile(`${pub}favicon-32.png`);
+  console.log('public/favicon-32.png');
+  await sharp(`${pub}fallback/0-light.webp`)
+    .extract({ left: 145, top: 145, width: 440, height: 440 })
+    .resize(180, 180)
+    .png()
+    .toFile(`${pub}apple-touch-icon.png`);
+  console.log('public/apple-touch-icon.png');
 }
 
 const { chrome, profile } = await launchChrome();
@@ -100,6 +142,16 @@ try {
         console.log(`public/fallback/${s}-${theme}.webp`);
       }
     }
+  } else if (mode === 'meta') {
+    await page.send('Emulation.setDeviceMetricsOverride', { width: 1200, height: 630, deviceScaleFactor: 1, mobile: false });
+    await page.send('Page.navigate', { url: 'about:blank' });
+    await sleep(300);
+    const { frameTree } = await page.send('Page.getFrameTree');
+    await page.send('Page.setDocumentContent', { frameId: frameTree.frame.id, html: ogHtml() });
+    await sleep(1500);
+    const { data } = await page.send('Page.captureScreenshot', { format: 'png' });
+    await sharp(Buffer.from(data, 'base64')).png({ compressionLevel: 9 }).toFile(path('../public/og.png'));
+    console.log('public/og.png');
   } else {
     const outDir = path('../review/');
     mkdirSync(outDir, { recursive: true });
@@ -121,5 +173,6 @@ try {
   page.close();
 } finally {
   chrome.kill();
-  rmSync(profile, { recursive: true, force: true });
+  // Chrome can still be writing to its profile as it exits
+  rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 }

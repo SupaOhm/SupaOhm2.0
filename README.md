@@ -11,6 +11,7 @@ npm run build             # typecheck, build, scene size budget, placeholder rep
 npm run preview           # serve dist/ at http://127.0.0.1:4173
 npm run capture:fallback  # with preview running: regenerate public/fallback stills
 npm run capture:review    # with preview running: screenshots of every state into review/
+npm run capture:meta      # after capture:fallback: link-preview image and icons into public/
 ```
 
 `scripts/capture.mjs` reads `CHROME` (path to the Chrome binary; default is the macOS path) and `BASE_URL` (default `http://127.0.0.1:4173/`).
@@ -29,3 +30,5 @@ The Mizuhada screen must be a mock or a blurred UI, with no real company data an
 ## Deploy
 
 Vercel's Vite preset works as-is: build command `npm run build`, output directory `dist`.
+
+`VITE_SITE_URL` in `.env` is the live address. `index.html` uses it for the canonical link and the link-preview tags, which need an absolute image URL. Change it if the site is served from another address.
