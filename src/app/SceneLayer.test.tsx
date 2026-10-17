@@ -18,7 +18,7 @@ vi.mock('../scroll/useScrollProgress', () => ({
 vi.mock('../scene/createScene', () => ({ createScene }));
 vi.mock('./capability', () => ({ detectSceneMode: vi.fn(() => 'full') }));
 
-const handle = (): SceneHandle => ({ setProgress: vi.fn(), setTheme: vi.fn(), setActive: vi.fn(), setDip: vi.fn(), dispose: vi.fn() });
+const handle = (): SceneHandle => ({ setProgress: vi.fn(), setTheme: vi.fn(), setActive: vi.fn(), setDip: vi.fn(), setArrive: vi.fn(), dispose: vi.fn() });
 
 describe('SceneLayer', () => {
   beforeEach(() => {
@@ -161,6 +161,59 @@ describe('SceneLayer', () => {
       });
       expect(scene).toHaveAttribute('data-status', 'static');
       expect(console.warn).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('contact phone slot', () => {
+    const renderWithSlot = () =>
+      render(
+        <>
+          <SceneLayer items={SCENE_ITEMS} theme="light" />
+          <div data-testid="slot" data-phone-slot />
+        </>,
+      );
+
+    it('lets the slot draw its own phone while there is no scene', () => {
+      vi.mocked(detectSceneMode).mockReturnValue('static');
+      renderWithSlot();
+      expect(screen.getByTestId('slot')).not.toHaveAttribute('data-scene');
+    });
+
+    it('hides the slot until the scene has settled the phone behind it', async () => {
+      createScene.mockImplementation((_c: HTMLCanvasElement, _i: unknown, o: SceneOptions) => {
+        o.onReady?.();
+        return handle();
+      });
+      renderWithSlot();
+      const slot = screen.getByTestId('slot');
+      await waitFor(() => expect(slot).toHaveAttribute('data-scene', 'arriving'));
+      const opts = createScene.mock.calls.at(-1)![2] as SceneOptions;
+      act(() => opts.onSlotChange!(true));
+      expect(slot).toHaveAttribute('data-scene', 'on');
+      act(() => opts.onSlotChange!(false));
+      expect(slot).toHaveAttribute('data-scene', 'arriving');
+      expect(opts.getSlot!()).toEqual({ left: 0, top: 0, width: 0, height: 0 });
+    });
+
+    it('marks the screen stage as the phone arrives, in every mode', () => {
+      vi.mocked(detectSceneMode).mockReturnValue('static');
+      renderWithSlot();
+      const slot = screen.getByTestId('slot');
+      act(() => scroll.sample!({ p: 7, exit: 0, dip: 0, arrive: 0.2 }));
+      expect(slot).toHaveAttribute('data-stage', 'off');
+      act(() => scroll.sample!({ p: 7, exit: 0, dip: 0, arrive: 0.6 }));
+      expect(slot).toHaveAttribute('data-stage', 'lock');
+      act(() => scroll.sample!({ p: 7, exit: 0, dip: 0, arrive: 1 }));
+      expect(slot).toHaveAttribute('data-stage', 'open');
+    });
+
+    it('forwards the arrival to a running scene', async () => {
+      const h = handle();
+      createScene.mockReturnValue(h);
+      renderWithSlot();
+      await waitFor(() => expect(createScene).toHaveBeenCalled());
+      act(() => scroll.sample!({ p: 7, exit: 0, dip: 0, arrive: 0.4 }));
+      expect(h.setArrive).toHaveBeenLastCalledWith(0.4);
     });
   });
 });

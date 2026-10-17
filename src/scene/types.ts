@@ -21,6 +21,8 @@ export interface SceneItem {
   kind: ObjectKind;
   pics: ScenePic[];
   label: string;
+  /** The page draws this state's screen: the object settles face-on behind the page's slot (SceneOptions.getSlot). */
+  slot?: boolean;
 }
 
 export interface SceneOptions {
@@ -34,6 +36,10 @@ export interface SceneOptions {
   centered: boolean;
   /** Called once, after the first frame is drawn. */
   onReady?: () => void;
+  /** The page's slot rect for a `slot` state, in viewport CSS pixels; null when there is none. */
+  getSlot?: () => SlotRect | null;
+  /** Called when a `slot` state settles over its slot (true) or leaves it (false). */
+  onSlotChange?: (on: boolean) => void;
 }
 
 export interface SceneHandle {
@@ -41,6 +47,8 @@ export interface SceneHandle {
   setTheme(theme: Theme): void;
   /** 0..1: a part heading is passing the middle of the screen; the object melts down to a droplet. */
   setDip(d: number): void;
+  /** 0..1: the slot state's arrival; it rolls in edge-on from the right and lands face-on at 1. */
+  setArrive(a: number): void;
   /** Pause rendering while the canvas is faded out. */
   setActive(active: boolean): void;
   dispose(): void;

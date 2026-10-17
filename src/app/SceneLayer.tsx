@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SceneHandle, SceneItem, Theme } from '../scene/types';
+import { phoneStage, type PhoneStage } from '../scroll/progress';
 import { usePrefersReducedMotion } from '../scroll/usePrefersReducedMotion';
 import { useScrollProgress, type ScrollSample } from '../scroll/useScrollProgress';
 import { detectSceneMode } from './capability';
@@ -27,11 +28,27 @@ export function SceneLayer({ items, theme, capture = false }: { items: SceneItem
   const handleRef = useRef<SceneHandle | null>(null);
   const progressRef = useRef(forcedP ?? 0);
   const dipRef = useRef(0);
+  const arriveRef = useRef(0);
+  const stageRef = useRef<PhoneStage | null>(null);
   const activeRef = useRef(true);
   const themeRef = useRef(theme);
   const [status, setStatus] = useState<Status>(mode === 'static' ? 'static' : 'loading');
   const [generation, setGeneration] = useState(0);
   const [fallbackState, setFallbackState] = useState(clampState(forcedP ?? 0, items.length));
+  const statusRef = useRef(status);
+  const slotOnRef = useRef(false);
+  // mirrors the scene's hold on the contact phone onto [data-phone-slot] (see .phone-slot in styles.css)
+  const syncSlot = useCallback(() => {
+    const el = document.querySelector<HTMLElement>('[data-phone-slot]');
+    if (!el) return;
+    if (statusRef.current !== 'ready') delete el.dataset.scene;
+    else el.dataset.scene = slotOnRef.current ? 'on' : 'arriving';
+  }, []);
+
+  useEffect(() => {
+    statusRef.current = status;
+    if (!capture) syncSlot();
+  }, [status, capture, syncSlot]);
 
   useEffect(() => {
     themeRef.current = theme;
@@ -71,11 +88,24 @@ export function SceneLayer({ items, theme, capture = false }: { items: SceneItem
     import('../scene/createScene').then(({ createScene }) => {
       if (!alive) return;
       try {
+        slotOnRef.current = false;
         const handle = createScene(canvas, items, {
           lite: mode === 'lite',
           reducedMotion: reduced,
           snap: capture || forcedP !== null,
           centered: capture,
+          getSlot: capture
+            ? undefined
+            : () => {
+                const el = document.querySelector('[data-phone-slot]');
+                if (!el) return null;
+                const r = el.getBoundingClientRect();
+                return { left: r.left, top: r.top, width: r.width, height: r.height };
+              },
+          onSlotChange: (on) => {
+            slotOnRef.current = on;
+            syncSlot();
+          },
           onReady: () => {
             if (alive) setStatus('ready');
           },
@@ -83,6 +113,7 @@ export function SceneLayer({ items, theme, capture = false }: { items: SceneItem
         handle.setTheme(themeRef.current);
         handle.setProgress(progressRef.current);
         handle.setDip(dipRef.current);
+        handle.setArrive(arriveRef.current);
         handle.setActive(activeRef.current); // the page may open already scrolled past the scene
         handleRef.current = handle;
       } catch (err) {
@@ -98,7 +129,7 @@ export function SceneLayer({ items, theme, capture = false }: { items: SceneItem
       handleRef.current?.dispose();
       handleRef.current = null;
     };
-  }, [mode, reduced, generation, items, capture, forcedP]);
+  }, [mode, reduced, generation, items, capture, forcedP, syncSlot]);
 
   const onSample = useCallback(
     (s: ScrollSample) => {
@@ -108,6 +139,15 @@ export function SceneLayer({ items, theme, capture = false }: { items: SceneItem
       activeRef.current = s.exit < 1;
       handleRef.current?.setProgress(s.p);
       handleRef.current?.setDip(s.dip);
+      arriveRef.current = s.arrive;
+      handleRef.current?.setArrive(s.arrive);
+      // the slot's screen stage, in every mode: the CSS phone (no WebGL) shows its lock screen and chat by it
+      const stage = phoneStage(s.arrive);
+      if (stage !== stageRef.current) {
+        stageRef.current = stage;
+        const el = document.querySelector<HTMLElement>('[data-phone-slot]');
+        if (el) el.dataset.stage = stage;
+      }
       handleRef.current?.setActive(activeRef.current);
       if (layerRef.current) layerRef.current.style.opacity = String(1 - s.exit);
       setFallbackState(clampState(s.p, items.length));

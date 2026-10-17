@@ -2,9 +2,9 @@ import { ACESFilmicToneMapping, Color, DirectionalLight, Group, Mesh, PMREMGener
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { backgroundCenter, createBackground } from './background';
 import { buildMorphGeometry } from './geometry';
-import { CAMERA_Z, FOV, placement } from './layout';
+import { CAMERA_Z, FOV, fitToSlot, placement, viewSize } from './layout';
 import { createObjectMaterial } from './material';
-import { ease, smoothstep } from './math';
+import { ease, lerp, smoothstep } from './math';
 import { blob, resolveObject } from './objects';
 import { BASE, PALETTE, STATE_COUNT } from './palette';
 import { createPictures } from './pictures';
@@ -45,6 +45,11 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
   const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   const pictures = objects.map((o, i) => createPictures(o.planes, items[i].pics, items[i].label, anisotropy));
 
+  // a slot state (the contact phone) rolls in and settles face-on behind the page's [data-phone-slot]
+  const slotIndex = items.findIndex((item) => item.slot);
+  const slotScreen = slotIndex >= 0 ? objects[slotIndex].planes[0] : undefined;
+  let slotOn = false;
+
   const group = new Group();
   group.add(mesh, ...pictures.map((p) => p.group));
   scene.add(group);
@@ -74,8 +79,10 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
   let time = 0;
   let frames = 0;
   let frameSum = 0;
-let dip = 0;
-let dipNow = 0;
+  let dip = 0;
+  let dipNow = 0;
+  let arrive = 0;
+  let arriveNow = 0;
 
   function resize() {
     const w = canvas.clientWidth || window.innerWidth;
@@ -125,9 +132,36 @@ let dipNow = 0;
       swell.step(swellTarget, dt);
     }
     primed = true;
-    group.position.set(posX.x, posY.x, 0);
 
-    // resting angle (turned toward the text), a full spin and wobble through the liquid
+    const slotW = slotIndex === k ? wA : slotIndex === k + 1 ? wB : 0;
+    const rect = slotScreen && slotW > 0 && !opts.centered ? (opts.getSlot?.() ?? null) : null;
+    const fit =
+      rect && slotScreen
+        ? fitToSlot(
+            rect,
+            canvas.clientWidth || window.innerWidth,
+            canvas.clientHeight || window.innerHeight,
+            slotScreen.size[1],
+            slotScreen.pos[2],
+          )
+        : null;
+    const settle = fit ? smoothstep(slotW, 0.5, 1) : 0;
+    const free = 1 - settle;
+    // the arrival: from just past the right edge, edge-on and tilted (roll 1), to face-on in the slot (roll 0)
+    arriveNow = still ? arrive : arriveNow + (arrive - arriveNow) * (1 - Math.exp(-dt * 10));
+    const roll = opts.reducedMotion ? 0 : 1 - ease(arriveNow);
+    const on = settle > 0.98 && arriveNow >= 0.97;
+    if (on !== slotOn) {
+      slotOn = on;
+      opts.onSlotChange?.(on);
+    }
+    // capture stills leave a slot state empty: the page draws its own phone there
+    mesh.visible = !(opts.centered && slotW > 0.5);
+    const offX = viewSize(camera.aspect).w / 2 + (fit?.scale ?? 0) * 1.2;
+    const slotX = fit ? lerp(fit.x, offX, roll) : 0;
+    group.position.set(lerp(posX.x, slotX, settle), lerp(posY.x, fit?.y ?? 0, settle), 0);
+
+    // resting angle (turned toward the text), a full spin and wobble through the liquid; in a slot, only the arrival roll
     const restA = objects[k].rest;
     const restB = objects[k + 1].rest;
     const sway = still ? 0 : Math.sin(t * 0.4) * 0.06;
@@ -135,16 +169,16 @@ let dipNow = 0;
     const tiltY = opts.reducedMotion ? 0 : mx * 0.35;
     const spin = opts.reducedMotion ? 0 : ease(s.g) * Math.PI * 2 * dir;
     group.rotation.set(
-      restA[0] * wA + restB[0] * wB + 0.15 * wBlob + tiltX + sway * 0.5 + wBlob * 0.5,
-      (restA[1] * wA + restB[1] * wB) * dir + tiltY + sway + spin,
-      wBlob * Math.sin(t * 1.6) * 0.18,
+      (restA[0] * wA + restB[0] * wB + 0.15 * wBlob + tiltX + sway * 0.5 + wBlob * 0.5) * free,
+      ((restA[1] * wA + restB[1] * wB) * dir + tiltY + sway + spin) * free - 1.47 * roll * settle,
+      wBlob * Math.sin(t * 1.6) * 0.18 * free + 0.14 * roll * settle,
     );
 
     // swell with overshoot, squash and stretch from sideways speed (units per frame at 60 fps)
-    const stretch = still ? 0 : Math.min(0.35, (Math.abs(posX.v) / 60) * 2.6);
+    const stretch = (still ? 0 : Math.min(0.35, (Math.abs(posX.v) / 60) * 2.6)) * free;
     // part headings passing the middle of the screen melt the object down to a droplet
     dipNow = still ? dip : dipNow + (dip - dipNow) * (1 - Math.exp(-dt * 10));
-    const size = swell.x * place.fit * (1 - 0.82 * dipNow);
+    const size = lerp(swell.x * place.fit, fit?.scale ?? 0, settle) * (1 - 0.82 * dipNow);
     group.scale.set(size * (1 + stretch), size * (1 - stretch * 0.6), size);
     camera.position.z = CAMERA_Z - wBlob * 1.1;
 
@@ -161,7 +195,7 @@ let dipNow = 0;
       b: wash,
       bar,
       t: opts.reducedMotion ? 0 : t,
-      center: backgroundCenter(posX.x, posY.x, camera.position.z),
+      center: backgroundCenter(group.position.x, group.position.y, camera.position.z),
       bars: opts.lite ? 0 : 1,
     });
     renderer.toneMappingExposure = dark ? 1.05 : 1;
@@ -227,6 +261,9 @@ let dipNow = 0;
     },
     setDip(d) {
       dip = d;
+    },
+    setArrive(a) {
+      arrive = a;
     },
     setActive(a) {
       active = a;
