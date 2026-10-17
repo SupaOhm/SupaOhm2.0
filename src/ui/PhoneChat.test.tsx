@@ -36,6 +36,24 @@ describe('PhoneChat', () => {
     expect(document.activeElement).toBe(screen.getByRole('button', { name: chat[1].ask }));
   });
 
+  it('keeps focus on the chip row while the answer is typed, and ignores chips until it lands', () => {
+    vi.useFakeTimers();
+    render(<PhoneChat greeting={chatGreeting} topics={chat} />);
+    const first = screen.getByRole('button', { name: chat[0].ask });
+    first.focus();
+    fireEvent.click(first);
+    const next = screen.getByRole('button', { name: chat[1].ask });
+    expect(document.activeElement).toBe(next);
+    expect(next).toHaveAttribute('aria-disabled', 'true');
+    expect(next).not.toBeDisabled();
+    fireEvent.click(next);
+    expect(screen.getByRole('log')).not.toHaveTextContent(chat[1].ask);
+    expect(chips()).toEqual(chat.slice(1, 4).map((t) => t.ask));
+    act(() => vi.advanceTimersByTime(800));
+    expect(next).not.toHaveAttribute('aria-disabled');
+    expect(document.activeElement).toBe(next);
+  });
+
   it('answers at once when motion is reduced', () => {
     mockMatchMedia([REDUCED]);
     render(<PhoneChat greeting={chatGreeting} topics={chat} />);

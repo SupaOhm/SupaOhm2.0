@@ -414,6 +414,7 @@ p {
 /* the 3D phone's screen (aspect checked in objects.test.ts). With no data-scene, the scene is not drawing,
    so the slot draws its own bezel; "arriving" hides it while the 3D phone flies in; "on" sits on the 3D glass */
 .phone-slot {
+  position: relative;
   width: clamp(220px, 22vw, 300px);
   aspect-ratio: 1440 / 3013;
   margin-right: 4vw;
@@ -521,7 +522,7 @@ p {
   padding: 5px 10px;
   cursor: pointer;
 }
-.chat-chips button:disabled {
+.chat-chips button[aria-disabled='true'] {
   opacity: 0.4;
   cursor: default;
 }
@@ -618,9 +619,6 @@ p {
 
 /* the screen follows the arrival (data-stage, set by SceneLayer): dark, the lock screen from halfway, the chat once landed.
    With the scene running (data-scene), the 3D screen paints the lock screen and the slot only ever shows the chat */
-.phone-slot {
-  position: relative;
-}
 .phone-lock {
   position: absolute;
   inset: 0;
@@ -634,11 +632,10 @@ p {
   opacity: 0;
 }
 .phone-slot .chat {
-  transition:
-    opacity 0.3s,
-    visibility 0.3s;
+  transition: opacity 0.3s;
 }
+/* hidden to the eye only: the chips stay in the tab order, and focusing one scrolls the phone in (Contact.tsx) */
 .phone-slot:not([data-stage='open']) .chat {
   opacity: 0;
-  visibility: hidden;
+  pointer-events: none;
 }

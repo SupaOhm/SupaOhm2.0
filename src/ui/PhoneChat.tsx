@@ -22,17 +22,19 @@ export function PhoneChat({ greeting, topics }: { greeting: string; topics: Chat
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
-  // keep the newest bubble in view; once an answer lands, put focus on the next question
+  // keep the newest bubble in view. The clicked chip goes away, so hold focus on the first chip left while the
+  // answer is typed, and again once it lands
   useEffect(() => {
     const log = logRef.current;
     if (log) log.scrollTop = log.scrollHeight;
-    if (refocus.current && !typing) {
-      refocus.current = false;
+    if (refocus.current) {
+      if (!typing) refocus.current = false;
       chipsRef.current?.querySelector('button')?.focus();
     }
   }, [thread, typing]);
 
   const ask = (i: number) => {
+    if (typing) return;
     const topic = topics[i];
     const answer: Bubble[] = [{ from: 'them', text: topic.answer }, ...topic.links.map((link) => ({ from: 'link' as const, link }))];
     setUsed((u) => [...u, i]);
@@ -50,6 +52,7 @@ export function PhoneChat({ greeting, topics }: { greeting: string; topics: Chat
   };
 
   const startOver = () => {
+    if (typing) return;
     window.clearTimeout(timer.current);
     refocus.current = true;
     setTyping(false);
@@ -87,12 +90,12 @@ export function PhoneChat({ greeting, topics }: { greeting: string; topics: Chat
       <div className="chat-chips" ref={chipsRef}>
         {remaining.length > 0 ? (
           remaining.slice(0, VISIBLE_CHIPS).map((i) => (
-            <button key={i} type="button" disabled={typing} onClick={() => ask(i)}>
+            <button key={i} type="button" aria-disabled={typing || undefined} onClick={() => ask(i)}>
               {topics[i].ask}
             </button>
           ))
         ) : (
-          <button type="button" disabled={typing} onClick={startOver}>
+          <button type="button" aria-disabled={typing || undefined} onClick={startOver}>
             Start over
           </button>
         )}
