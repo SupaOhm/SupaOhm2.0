@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { anchorPoint, arriveAmount, dipAmount, progressFromAnchors, sceneFade, scrollYForProgress } from './progress';
 
+/** The scene starts back this many viewports before Contact's top, so it is fully back by arrive ≈ 0.3 and the roll shows. */
+const RETURN_LEAD = 0.45;
+
 export interface ScrollSample {
   /** Object-state progress, 0..n-1. */
   p: number;
@@ -54,8 +57,7 @@ export function useScrollProgress(onSample: (s: ScrollSample) => void, initialP:
       const vh = window.innerHeight;
       callback.current({
         p: progressFromAnchors(y, anchors),
-        // the scene is fully back by 30% of the phone's arrival, so the roll is visible
-        exit: sceneFade(y, exitTop, returnTop - vh * 0.45, vh),
+        exit: sceneFade(y, exitTop, returnTop - vh * RETURN_LEAD, vh),
         dip: dipAmount(y, dips, vh),
         arrive: arriveAmount(y, returnTop, vh),
       });

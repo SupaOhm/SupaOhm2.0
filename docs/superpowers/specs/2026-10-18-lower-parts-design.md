@@ -44,7 +44,7 @@ Chosen in brainstorming (visual companion):
 
 ### 3.1 Exit and return
 
-`ScrollSample` gains nothing new in shape: `exit` becomes a window instead of a one-way ramp. `exit = exitFade(y, exitTop, vh) * (1 - exitFade(y, returnTop, vh))`, where `returnTop` is the top of `[data-scene-return]` (Infinity when absent). `SceneLayer` keeps using `1 - exit` for opacity and `exit < 1` for `setActive`.
+`ScrollSample` gains nothing new in shape: `exit` becomes a window instead of a one-way ramp. `exit = exitFade(y, exitTop, vh) * (1 - exitFade(y, returnTop - 0.45 vh, vh))`, where `returnTop` is the top of `[data-scene-return]` (Infinity when absent). The return point is `returnTop - 0.45 vh` (`RETURN_LEAD` in `useScrollProgress`), so the scene is fully back by arrive ≈ 0.3 (3.4). `SceneLayer` keeps using `1 - exit` for opacity and `exit < 1` for `setActive`.
 
 ### 3.2 Part-heading dip (overlap fix)
 
@@ -146,7 +146,7 @@ The email and links in the last answer come from `profile`, not repeated literal
 - `ProjectWall.test.tsx`: 10 names in order; focus and tap show the card with line and tech; only entries with `href` render as links.
 - `AboutRail.test.tsx`: four panels in order; reduced motion renders the stacked layout.
 - `PhoneChat.test.tsx`: opening bubble and 3 chips; tapping a chip adds the question and (with fake timers) the answer, and removes the chip; link bubbles have the right `href`s; "Start over" resets.
-- Updated: `App.test.tsx` (sections and headings), anchors still `'0'..'7'` alternating, `sceneItems.test.ts` (last kind `'phone'`), `createScene.test.ts` (`setDip` and `setSlot` exist), `content.test.ts` (covers `chat.ts` and the merged `projects`; forbidden name and phone number by hash).
+- Updated: `App.test.tsx` (sections and headings), anchors still `'0'..'7'` alternating, `sceneItems.test.ts` (last kind `'phone'`), `setDip` and `setArrive` are typed on `SceneHandle` and `getSlot` and `onSlotChange` on `SceneOptions` (no `createScene` test); `SceneLayer.test.tsx` covers all four, `content.test.ts` (covers `chat.ts` and the merged `projects`; forbidden name and phone number by hash).
 - Visual: `capture:review` plus a scroll capture of the wall, About and Contact at 1440×900 and 390×844 in both themes; every shot checked before the work is called done.
 
 ## 9. Out of scope
