@@ -56,7 +56,7 @@ Each `.part` gets `data-scene-dip`. `useScrollProgress` measures their centres a
 
 Contact contains `[data-phone-slot]`, a phone-shaped box in normal flow (aspect 9:19.5, width `clamp(220px, 22vw, 300px)`; centred below the text on narrow screens). `PhoneChat` lives inside it.
 
-When `p` is within 0.5 of 7 and the scene is visible, the scene reads the slot's viewport rect each frame (passed in from `SceneLayer` via `setSlot(rect | null)`) and places and scales the phone so its screen fills the slot exactly. It settles front-facing with no rotation; the arrival can spin, and the chat fades in (opacity 0 to 1 over 300 ms) once the phone has settled (`onSettled` callback, or immediately with reduced motion).
+While the slot state is formed, the scene reads the slot's viewport rect each frame (`SceneOptions.getSlot`) and places and scales the phone so its screen fills the slot exactly once it has landed (see 3.4 for the arrival). The chat fades in (opacity over 300 ms) once the phone has landed and unlocked.
 
 The scene reports `onSlotChange(on)`; `SceneLayer` mirrors it onto the slot as `data-scene`:
 
@@ -65,6 +65,17 @@ The scene reports `onSlotChange(on)`; `SceneLayer` mirrors it onto the slot as `
 - `on` once the phone has settled over the slot: no CSS bezel, and the chat sits on a translucent dark layer over the 3D glass.
 
 The slot is the phone's *screen* rect (aspect 1440 / 3013, the 3D screen plane's), and the CSS bezel is drawn outside it.
+
+### 3.4 Arrival and lock screen
+
+`useScrollProgress` also reports `arrive` (0..1): `clamp01((y - (returnTop - vh / 2)) / vh)`, one viewport of scrolling that ends with Contact's top at the top of the screen (the bottom of the page, since Contact is at least 100vh tall). `SceneHandle.setArrive(a)` passes it on.
+
+- **Roll:** while the slot state is formed, the phone's pose goes from just past the right edge of the screen, edge-on (rotation Y −1.47 rad, about 84°) and tilted (rotation Z 0.14), to face-on in its slot. The blend is `ease(arrive)`, scroll-linked and reversible. Reduced motion: no roll, face-on throughout.
+- **Screen stages** (`phoneStage(arrive)`): `off` below 0.5 (dark glass), `lock` from 0.5 (the lock screen wakes over 0.5 to 0.6; the Face ID ring sweeps from 0.8 to 0.97, then ticks), `open` from 0.97 (the lock screen fades and the HTML chat takes over).
+- **Lock screen design (liquid glass):** pastel blooms (`#c9d6ff`, `#ffd1e8`, `#b8f0e4`) on `#e9ecf5`; the date (600 weight); a large clock in translucent white (700 weight) with a soft blue shadow; a frosted notification pill reading "Supakorn · now / made it to the bottom? say hi 👋"; a home indicator. It shows the visitor's own time (`H:MM`) and date ("Sunday 18 October").
+- **One drawing function:** `drawLockScreen(ctx, w, h, { time, date, faceId })` in `src/ui/lockScreen.ts`, in plain Canvas 2D. The scene paints it onto the phone screen as a `CanvasTexture`, redrawn only when the minute or the Face ID step (1/24) changes. Without WebGL, `LockCanvas` paints it into the CSS phone.
+- `SceneLayer` writes `data-stage` (`off`, `lock` or `open`) on the slot in every mode. The no-WebGL phone uses it to show the lock canvas and then the chat. With the scene, the slot shows only the chat, once `data-scene="on"` (which needs `arrive >= 0.97`).
+- Face ID is only an animation; the camera is never used.
 
 ## 4. Components
 
@@ -125,11 +136,12 @@ The email and links in the last answer come from `profile`, not repeated literal
 - Wall: real links and buttons, `aria-describedby` to the card text, visible focus.
 - About: reading order preserved; the narrow track is focusable and arrow-key scrollable.
 - Chat: buttons for chips, `role="log"` with polite live updates, focus kept on the chip row.
-- Reduced motion: no typing dots, no following card, About stacks, the dip is instant, and the phone does not spin on arrival.
+- Reduced motion: no typing dots, no following card, About stacks, the dip is instant, and the phone does not roll in (the lock screen and unlock still follow scrolling).
 
 ## 8. Testing
 
-- `progress.test.ts`: `dipAmount` is 1 at a heading centre, 0 beyond `0.45 vh`; the exit window is 0 before the wall, 1 between wall and Contact, 0 at Contact.
+- `progress.test.ts`: `dipAmount` is 1 at a heading centre, 0 beyond `0.45 vh`; the exit window is 0 before the wall, 1 between wall and Contact, 0 at Contact; `arriveAmount` runs 0 to 1 over one viewport; `phoneStage` thresholds.
+- `lockScreen.test.ts`: `lockClock` formats time and date; `drawLockScreen` draws the date, clock and notification, and the Face ID ring only once it starts.
 - `ProjectWall.test.tsx`: 10 names in order; focus and tap show the card with line and tech; only entries with `href` render as links.
 - `AboutRail.test.tsx`: four panels in order; reduced motion renders the stacked layout.
 - `PhoneChat.test.tsx`: opening bubble and 3 chips; tapping a chip adds the question and (with fake timers) the answer, and removes the chip; link bubbles have the right `href`s; "Start over" resets.

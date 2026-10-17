@@ -2,12 +2,15 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the plain project rows, More projects grid, About grid and Contact block with a wall of project names, a sideways-scrolling About, and a Contact finale where the 3D phone returns with a chat on its screen. Also make the object melt down while part headings pass, so it stops running over them.
+**Goal:** Replace the plain project rows, More projects grid, About grid and Contact block with a wall of project names, a sideways-scrolling About, and a Contact finale. In that finale the 3D phone rolls in from the side, wakes to a liquid-glass lock screen, and unlocks to a chat. Also make the object melt down while part headings pass, so it stops running over them.
 
 **Architecture:** DOM first. The new parts are React components with CSS. The scene gains three inputs:
 - **A dip value:** the object shrinks to a droplet while a part heading is centred.
 - **An exit window:** the scene fades out at the project wall and back in at Contact.
 - **A slot:** the last state (the phone) fits its screen exactly behind the page's `[data-phone-slot]`, where the chat is real HTML.
+- **An arrival value:** over the last screen of the page, the phone rolls in edge-on from the right, and its screen goes dark, then shows a lock screen, then unlocks.
+
+The lock screen is one Canvas 2D drawing, used both as the 3D screen's texture and in the CSS phone.
 
 Without WebGL, the slot draws a CSS phone around the same chat.
 
@@ -23,6 +26,8 @@ Without WebGL, the slot draws a CSS phone around the same chat.
 - **three.js loading:** three is loaded only via the dynamic `import('../scene/createScene')`. The scene chunk stays under the existing budget in `scripts/check-size.mjs`.
 - **Dependencies:** no new runtime dependencies.
 - **WebGL independence:** text, links and the chat never depend on WebGL.
+- **Face ID:** it is only an animation. Never request camera access.
+- **Lock screen copy:** "Supakorn", "now", "made it to the bottom? say hi 👋", plus the visitor's local time (`H:MM`) and date ("Sunday 18 October").
 - **State count:** `STATE_COUNT` stays 8.
 - **Chat copy:** exact strings from the spec §5, with the email and profile links taken from `profile`. Six chips, in this order:
   1. What are you working on?
@@ -43,7 +48,7 @@ Without WebGL, the slot draws a CSS phone around the same chat.
 
 | File | Change |
 |---|---|
-| `src/scroll/progress.ts` (+test) | add `dipAmount`, `sceneFade` |
+| `src/scroll/progress.ts` (+test) | add `dipAmount`, `sceneFade`, `arriveAmount`, `phoneStage` |
 | `src/scene/types.ts` | add `SlotRect`, `SceneItem.slot`, `SceneOptions.getSlot/onSlotChange`, `SceneHandle.setDip` |
 | `src/scene/layout.ts` (+test) | add `fitToSlot` |
 | `src/scene/objects/objects.test.ts` | phone screen aspect test |
@@ -55,9 +60,14 @@ Without WebGL, the slot draws a CSS phone around the same chat.
 | `src/ui/PhoneChat.tsx` (+test) | new |
 | `src/ui/Contact.tsx` | anchor 7, return marker, phone slot with the chat |
 | `src/ui/PartHeading.tsx` | `data-scene-dip` |
-| `src/scroll/useScrollProgress.ts` | measure dips and return; sample `{ p, exit, dip }` |
-| `src/scene/createScene.ts` | dip scale, slot fit, glow-only capture of slot states |
-| `src/app/SceneLayer.tsx` (+test) | forward dip; slot rect and `data-scene` on the slot |
+| `src/ui/lockScreen.ts` (+test) | new: `lockClock`, `drawLockScreen` (Canvas 2D) |
+| `src/ui/LockCanvas.tsx` | new: the lock screen in the CSS phone |
+| `src/scene/lockPlane.ts` | new: the lock screen as the 3D phone's screen texture |
+| `src/scene/pictures.ts` | export `screenMaterial` |
+| `src/test/setup.ts` | quiet `getContext` stub (jsdom has no canvas) |
+| `src/scroll/useScrollProgress.ts` | measure dips and return; sample `{ p, exit, dip, arrive }` |
+| `src/scene/createScene.ts` | dip scale, slot fit and arrival roll, lock screen plane, glow-only capture of slot states |
+| `src/app/SceneLayer.tsx` (+test) | forward dip and arrive; slot rect, `data-scene` and `data-stage` on the slot |
 | `src/app/sceneItems.ts` (+test) | last state is the slot phone |
 | `src/app/App.tsx` (+test) | wire the new parts |
 | `src/scene/palette.ts` | comment only |
@@ -68,7 +78,7 @@ Without WebGL, the slot draws a CSS phone around the same chat.
 
 ---
 
-### Task 1: Dip and exit-window math
+### Task 1: Dip, exit-window and arrival math
 
 **Files:**
 - Modify: `src/scroll/progress.ts`
@@ -78,9 +88,11 @@ Without WebGL, the slot draws a CSS phone around the same chat.
 - Produces:
   - `dipAmount(y: number, centres: number[], vh: number): number`, 0..1.
   - `sceneFade(y: number, exitTop: number, returnTop: number, vh: number): number`, 0..1.
-  - Both are used by `useScrollProgress` in Task 6.
+  - `arriveAmount(y: number, returnTop: number, vh: number): number`, 0..1.
+  - `type PhoneStage = 'off' | 'lock' | 'open'` and `phoneStage(arrive: number): PhoneStage`.
+  - `useScrollProgress` (Task 6) uses the first three; `SceneLayer` (Task 7) uses `phoneStage`.
 
-- [ ] **Step 1: Write the failing tests.** Append to `src/scroll/progress.test.ts` and extend its import to `import { anchorPoint, dipAmount, exitFade, progressFromAnchors, sceneFade, scrollYForProgress } from './progress';`:
+- [ ] **Step 1: Write the failing tests.** Append to `src/scroll/progress.test.ts` and extend its import to `import { anchorPoint, arriveAmount, dipAmount, exitFade, phoneStage, progressFromAnchors, sceneFade, scrollYForProgress } from './progress';`:
 
 ```ts
 describe('dipAmount', () => {
@@ -111,11 +123,32 @@ describe('sceneFade', () => {
     expect(sceneFade(20000, 3000, Infinity, 800)).toBe(1);
   });
 });
+
+describe('arriveAmount', () => {
+  it('runs from 0 to 1 over one viewport, ending with the return element at the top of the screen', () => {
+    expect(arriveAmount(9000 - 400, 9000, 800)).toBe(0);
+    expect(arriveAmount(9000, 9000, 800)).toBeCloseTo(0.5);
+    expect(arriveAmount(9000 + 400, 9000, 800)).toBe(1);
+  });
+
+  it('is 0 without a return element', () => {
+    expect(arriveAmount(20000, Infinity, 800)).toBe(0);
+  });
+});
+
+describe('phoneStage', () => {
+  it('is dark, then locked from halfway, then open once the phone has landed', () => {
+    expect(phoneStage(0.2)).toBe('off');
+    expect(phoneStage(0.5)).toBe('lock');
+    expect(phoneStage(0.96)).toBe('lock');
+    expect(phoneStage(0.97)).toBe('open');
+  });
+});
 ```
 
 - [ ] **Step 2: Run the tests and check they fail.**
   - Run: `npx vitest run src/scroll/progress.test.ts`
-  - Expected: FAIL, because `dipAmount` and `sceneFade` are not exported.
+  - Expected: FAIL, because `dipAmount`, `sceneFade`, `arriveAmount` and `phoneStage` are not exported.
 
 - [ ] **Step 3: Implement.** In `src/scroll/progress.ts`, change the import to `import { clamp01, smoothstep } from '../scene/math';` and append:
 
@@ -134,6 +167,21 @@ export function dipAmount(y: number, centres: number[], vh: number): number {
 export function sceneFade(y: number, exitTop: number, returnTop: number, vh: number): number {
   return exitFade(y, exitTop, vh) * (1 - exitFade(y, returnTop, vh));
 }
+
+/**
+ * The contact phone's arrival, 0..1 over one viewport of scrolling: it starts with the return element's top
+ * half a screen below the middle and ends with it at the top of the screen (the bottom of the page).
+ */
+export function arriveAmount(y: number, returnTop: number, vh: number): number {
+  return clamp01((y - (returnTop - vh / 2)) / vh);
+}
+
+export type PhoneStage = 'off' | 'lock' | 'open';
+
+/** The contact phone's screen along its arrival: dark, the lock screen from halfway, unlocked once landed. */
+export function phoneStage(arrive: number): PhoneStage {
+  return arrive < 0.5 ? 'off' : arrive < 0.97 ? 'lock' : 'open';
+}
 ```
 
 - [ ] **Step 4: Run the tests and check they pass.**
@@ -144,7 +192,7 @@ export function sceneFade(y: number, exitTop: number, returnTop: number, vh: num
 
 ```bash
 git add src/scroll/progress.ts src/scroll/progress.test.ts
-git commit -m "feat(scroll): heading dip and an exit window that can return" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git commit -m "feat(scroll): heading dip, an exit window that can return, and the phone's arrival" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01PVsCofSvenEXaFKqp3MYGN"
 ```
 
@@ -1447,7 +1495,7 @@ Inside the narrow media query:
   }
   .phone-slot {
     justify-self: center;
-    width: min(64vw, 260px);
+    width: min(56vw, 230px);
     margin-right: 0;
   }
 ```
@@ -1497,16 +1545,16 @@ Claude-Session: https://claude.ai/code/session_01PVsCofSvenEXaFKqp3MYGN"
 - Modify: `src/scroll/useScrollProgress.ts`, `src/ui/PartHeading.tsx`, `src/ui/Contact.tsx`, `src/scene/types.ts`, `src/scene/createScene.ts`, `src/app/SceneLayer.tsx`, `src/app/SceneLayer.test.tsx`
 
 **Interfaces:**
-- Consumes: `dipAmount` and `sceneFade` (Task 1).
+- Consumes: `dipAmount`, `sceneFade` and `arriveAmount` (Task 1).
 - Produces:
-  - `ScrollSample = { p: number; exit: number; dip: number }`.
+  - `ScrollSample = { p: number; exit: number; dip: number; arrive: number }`. `arrive` is used by Task 7.
   - `SceneHandle.setDip(d: number): void`.
   - The markers `[data-scene-dip]` on `.part` and `[data-scene-return]` on `#contact`.
 
 - [ ] **Step 1: Write the failing test.** In `src/app/SceneLayer.test.tsx`:
   - Change `handle` to `({ setProgress: vi.fn(), setTheme: vi.fn(), setActive: vi.fn(), setDip: vi.fn(), dispose: vi.fn() })`.
-  - Change the two existing `scroll.sample!` calls to pass `dip: 0` (`{ p: 7.4, exit: 0, dip: 0 }` and `{ p: -0.8, exit: 0, dip: 0 }`).
-  - Widen the hoisted type to `((s: { p: number; exit: number; dip: number }) => void)`, and add:
+  - Change the two existing `scroll.sample!` calls to pass `dip: 0, arrive: 0` (`{ p: 7.4, exit: 0, dip: 0, arrive: 0 }` and `{ p: -0.8, exit: 0, dip: 0, arrive: 0 }`).
+  - Widen the hoisted type to `((s: { p: number; exit: number; dip: number; arrive: number }) => void)`, and add:
 
 ```tsx
   it('forwards the heading dip to a running scene', async () => {
@@ -1514,7 +1562,7 @@ Claude-Session: https://claude.ai/code/session_01PVsCofSvenEXaFKqp3MYGN"
     createScene.mockReturnValue(h);
     render(<SceneLayer items={SCENE_ITEMS} theme="light" />);
     await waitFor(() => expect(createScene).toHaveBeenCalled());
-    act(() => scroll.sample!({ p: 2, exit: 0, dip: 0.7 }));
+    act(() => scroll.sample!({ p: 2, exit: 0, dip: 0.7, arrive: 0 }));
     expect(h.setDip).toHaveBeenLastCalledWith(0.7);
   });
 ```
@@ -1555,7 +1603,7 @@ with
 ```
 
 - [ ] **Step 4: Scroll hook.** In `src/scroll/useScrollProgress.ts`:
-  - Change the import to `import { anchorPoint, dipAmount, progressFromAnchors, sceneFade, scrollYForProgress } from './progress';`.
+  - Change the import to `import { anchorPoint, arriveAmount, dipAmount, progressFromAnchors, sceneFade, scrollYForProgress } from './progress';`.
   - Replace the `ScrollSample` interface with:
 
 ```ts
@@ -1566,6 +1614,8 @@ export interface ScrollSample {
   exit: number;
   /** 0..1: how close a part heading is to the middle of the screen. */
   dip: number;
+  /** 0..1: the contact phone's arrival, over the last screen of the page. */
+  arrive: number;
 }
 ```
 
@@ -1597,6 +1647,7 @@ export interface ScrollSample {
         p: progressFromAnchors(y, anchors),
         exit: sceneFade(y, exitTop, returnTop, vh),
         dip: dipAmount(y, dips, vh),
+        arrive: arriveAmount(y, returnTop, vh),
       });
 ```
 
@@ -1625,18 +1676,20 @@ Claude-Session: https://claude.ai/code/session_01PVsCofSvenEXaFKqp3MYGN"
 
 ---
 
-### Task 7: The phone settles behind the chat
+### Task 7: The phone rolls in and settles behind the chat
 
 **Files:**
 - Modify: `src/scene/types.ts`, `src/scene/createScene.ts`, `src/scene/palette.ts`, `src/app/sceneItems.ts`, `src/app/sceneItems.test.ts`, `src/app/SceneLayer.tsx`, `src/app/SceneLayer.test.tsx`
 
 **Interfaces:**
-- Consumes: `fitToSlot` and `SlotRect` (Task 2), and `[data-phone-slot]` (Task 5).
+- Consumes: `fitToSlot` and `SlotRect` (Task 2), `[data-phone-slot]` (Task 5), `ScrollSample.arrive` (Task 6), and `phoneStage` (Task 1).
 - Produces:
   - `SceneItem.slot?: boolean`.
   - `SceneOptions.getSlot?: () => SlotRect | null`.
   - `SceneOptions.onSlotChange?: (on: boolean) => void`.
-  - The `data-scene` attribute on `[data-phone-slot]`: absent, `'arriving'` or `'on'`.
+  - `SceneHandle.setArrive(a: number): void`.
+  - On `[data-phone-slot]`: `data-scene` (absent, `'arriving'` or `'on'`) and `data-stage` (`'off'`, `'lock'` or `'open'`).
+  - Inside `createScene`: `slotScreen`, `settle`, `arriveNow` and `opts.centered`, which Task 8 uses for the lock screen plane.
 
 - [ ] **Step 1: Write the failing tests.** Replace `src/app/sceneItems.test.ts` with:
 
@@ -1685,12 +1738,35 @@ Add to `src/app/SceneLayer.test.tsx`:
       expect(slot).toHaveAttribute('data-scene', 'arriving');
       expect(opts.getSlot!()).toEqual({ left: 0, top: 0, width: 0, height: 0 });
     });
+
+    it('marks the screen stage as the phone arrives, in every mode', () => {
+      vi.mocked(detectSceneMode).mockReturnValue('static');
+      renderWithSlot();
+      const slot = screen.getByTestId('slot');
+      act(() => scroll.sample!({ p: 7, exit: 0, dip: 0, arrive: 0.2 }));
+      expect(slot).toHaveAttribute('data-stage', 'off');
+      act(() => scroll.sample!({ p: 7, exit: 0, dip: 0, arrive: 0.6 }));
+      expect(slot).toHaveAttribute('data-stage', 'lock');
+      act(() => scroll.sample!({ p: 7, exit: 0, dip: 0, arrive: 1 }));
+      expect(slot).toHaveAttribute('data-stage', 'open');
+    });
+
+    it('forwards the arrival to a running scene', async () => {
+      const h = handle();
+      createScene.mockReturnValue(h);
+      renderWithSlot();
+      await waitFor(() => expect(createScene).toHaveBeenCalled());
+      act(() => scroll.sample!({ p: 7, exit: 0, dip: 0, arrive: 0.4 }));
+      expect(h.setArrive).toHaveBeenLastCalledWith(0.4);
+    });
   });
 ```
 
+Change `handle` in that file to `({ setProgress: vi.fn(), setTheme: vi.fn(), setActive: vi.fn(), setDip: vi.fn(), setArrive: vi.fn(), dispose: vi.fn() })`.
+
 - [ ] **Step 2: Run the tests and check they fail.**
   - Run: `npx vitest run src/app/sceneItems.test.ts src/app/SceneLayer.test.tsx`
-  - Expected: FAIL. The last kind is still 'sphere', and `onSlotChange` and `getSlot` are undefined.
+  - Expected: FAIL. The last kind is still 'sphere'; `onSlotChange`, `getSlot` and `setArrive` don't exist; and no `data-stage` is set.
 
 - [ ] **Step 3: Types.** In `src/scene/types.ts`:
   - Add this to `SceneItem`:
@@ -1709,17 +1785,25 @@ Add to `src/app/SceneLayer.test.tsx`:
   onSlotChange?: (on: boolean) => void;
 ```
 
+  - Add this to `SceneHandle`:
+
+```ts
+  /** 0..1: the slot state's arrival; it rolls in edge-on from the right and lands face-on at 1. */
+  setArrive(a: number): void;
+```
+
 - [ ] **Step 4: Scene items and palette comment.**
   - In `src/app/sceneItems.ts`, replace the sphere entry with `{ kind: 'phone', pics: [], label: 'Say hello.', slot: true },`.
   - Change the doc comment to `/** Object states in page order: hero pebble, the Best Paper frame, the five featured items, the contact phone. */`.
   - In `src/scene/palette.ts`, change `AckLab, projects` in the comment to `AckLab, contact`.
 
 - [ ] **Step 5: createScene.** In `src/scene/createScene.ts`:
-  - Change the imports to `import { CAMERA_Z, FOV, fitToSlot, placement } from './layout';` and `import { ease, lerp, smoothstep } from './math';`.
+  - Change the imports to `import { CAMERA_Z, FOV, fitToSlot, placement, viewSize } from './layout';` and `import { ease, lerp, smoothstep } from './math';`.
+  - Add `let arrive = 0;` and `let arriveNow = 0;` after `let dipNow = 0;`.
   - After the `const pictures = ...` line, add:
 
 ```ts
-  // a slot state (the contact phone) settles face-on behind the page's [data-phone-slot]
+  // a slot state (the contact phone) rolls in and settles face-on behind the page's [data-phone-slot]
   const slotIndex = items.findIndex((item) => item.slot);
   const slotScreen = slotIndex >= 0 ? objects[slotIndex].planes[0] : undefined;
   let slotOn = false;
@@ -1744,16 +1828,21 @@ Add to `src/app/SceneLayer.test.tsx`:
         : null;
     const settle = fit ? smoothstep(slotW, 0.5, 1) : 0;
     const free = 1 - settle;
-    const on = settle > 0.995;
+    // the arrival: from just past the right edge, edge-on and tilted (roll 1), to face-on in the slot (roll 0)
+    arriveNow = still ? arrive : arriveNow + (arrive - arriveNow) * (1 - Math.exp(-dt * 10));
+    const roll = opts.reducedMotion ? 0 : 1 - ease(arriveNow);
+    const on = settle > 0.98 && arriveNow >= 0.97;
     if (on !== slotOn) {
       slotOn = on;
       opts.onSlotChange?.(on);
     }
     // capture stills leave a slot state empty: the page draws its own phone there
     mesh.visible = !(opts.centered && slotW > 0.5);
-    group.position.set(lerp(posX.x, fit?.x ?? 0, settle), lerp(posY.x, fit?.y ?? 0, settle), 0);
+    const offX = viewSize(camera.aspect).w / 2 + (fit?.scale ?? 0) * 1.2;
+    const slotX = fit ? lerp(fit.x, offX, roll) : 0;
+    group.position.set(lerp(posX.x, slotX, settle), lerp(posY.x, fit?.y ?? 0, settle), 0);
 
-    // resting angle (turned toward the text), a full spin and wobble through the liquid; none once settled in a slot
+    // resting angle (turned toward the text), a full spin and wobble through the liquid; in a slot, only the arrival roll
     const restA = objects[k].rest;
     const restB = objects[k + 1].rest;
     const sway = still ? 0 : Math.sin(t * 0.4) * 0.06;
@@ -1762,8 +1851,8 @@ Add to `src/app/SceneLayer.test.tsx`:
     const spin = opts.reducedMotion ? 0 : ease(s.g) * Math.PI * 2 * dir;
     group.rotation.set(
       (restA[0] * wA + restB[0] * wB + 0.15 * wBlob + tiltX + sway * 0.5 + wBlob * 0.5) * free,
-      ((restA[1] * wA + restB[1] * wB) * dir + tiltY + sway + spin) * free,
-      wBlob * Math.sin(t * 1.6) * 0.18 * free,
+      ((restA[1] * wA + restB[1] * wB) * dir + tiltY + sway + spin) * free - 1.47 * roll * settle,
+      wBlob * Math.sin(t * 1.6) * 0.18 * free + 0.14 * roll * settle,
     );
 
     // swell with overshoot, squash and stretch from sideways speed (units per frame at 60 fps)
@@ -1775,6 +1864,13 @@ Add to `src/app/SceneLayer.test.tsx`:
 ```
 
   - In the `background.update({...})` call, change `center: backgroundCenter(posX.x, posY.x, camera.position.z),` to `center: backgroundCenter(group.position.x, group.position.y, camera.position.z),`, so the glow follows the phone into its slot.
+  - Add this to the returned handle, after `setDip`:
+
+```ts
+    setArrive(a) {
+      arrive = a;
+    },
+```
 
 - [ ] **Step 6: SceneLayer.** In `src/app/SceneLayer.tsx`:
   - Add these after the `useState` lines:
@@ -1815,6 +1911,21 @@ Add to `src/app/SceneLayer.test.tsx`:
 ```
 
   - Add `syncSlot` to that effect's dependency array.
+  - Add `const arriveRef = useRef(0);` and `const stageRef = useRef<PhoneStage | null>(null);` next to `dipRef`. Import `phoneStage` and `type PhoneStage` from `'../scroll/progress'`.
+  - In scene creation, after `handle.setDip(dipRef.current);`, add `handle.setArrive(arriveRef.current);`.
+  - In `onSample`, after `handleRef.current?.setDip(s.dip);`, add:
+
+```tsx
+      arriveRef.current = s.arrive;
+      handleRef.current?.setArrive(s.arrive);
+      // the slot's screen stage, in every mode: the CSS phone (no WebGL) shows its lock screen and chat by it
+      const stage = phoneStage(s.arrive);
+      if (stage !== stageRef.current) {
+        stageRef.current = stage;
+        const el = document.querySelector<HTMLElement>('[data-phone-slot]');
+        if (el) el.dataset.stage = stage;
+      }
+```
 
 - [ ] **Step 7: Run everything and build.**
   - Run: `npm test && npm run build`
@@ -1824,20 +1935,428 @@ Add to `src/app/SceneLayer.test.tsx`:
 
 ```bash
 git add -A src
-git commit -m "feat(scene): the contact phone settles face-on behind the chat" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git commit -m "feat(scene): the contact phone rolls in from the side and settles behind the chat" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01PVsCofSvenEXaFKqp3MYGN"
 ```
 
 ---
 
-### Task 8: Stills, section captures and a visual pass
+### Task 8: The liquid-glass lock screen
+
+**Files:**
+- Create: `src/ui/lockScreen.ts`, `src/ui/lockScreen.test.ts`, `src/ui/LockCanvas.tsx`, `src/scene/lockPlane.ts`
+- Modify: `src/scene/pictures.ts`, `src/scene/createScene.ts`, `src/ui/Contact.tsx`, `src/styles.css`, `src/test/setup.ts`
+
+**Interfaces:**
+- Consumes:
+  - `data-stage` and `data-scene` on the slot (Task 7).
+  - Inside `createScene`: `slotScreen`, `settle` and `arriveNow` (Task 7).
+- Produces:
+  - `lockClock(now: Date): { time: string; date: string }`.
+  - `drawLockScreen(ctx, w, h, { time, date, faceId })`.
+  - `LOCK_NOTE`.
+  - `<LockCanvas />`.
+  - `createLockPlane(plane): { mesh, update(amount, faceId), dispose() }`.
+  - `screenMaterial(aspect)` exported from `pictures.ts`.
+
+- [ ] **Step 1: Quiet the missing canvas in tests.** jsdom has no canvas, and `getContext` logs "not implemented". In `src/test/setup.ts`, import `vi` from vitest and make `beforeEach` stub it:
+
+```ts
+beforeEach(() => {
+  mockMatchMedia();
+  // jsdom has no canvas: return no context quietly instead of logging "not implemented"
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+});
+```
+
+(Replace the existing `beforeEach(() => mockMatchMedia());`. Tests that need a context still override it with their own `mockReturnValue`.)
+
+- [ ] **Step 2: Write the failing tests.** Create `src/ui/lockScreen.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { LOCK_NOTE, drawLockScreen, lockClock } from './lockScreen';
+
+/** A 2D context that records the text it draws and the names of the other calls. */
+function fakeContext() {
+  const texts: string[] = [];
+  const calls: string[] = [];
+  const state: Record<string, unknown> = {};
+  const ctx = new Proxy(state, {
+    get(target, prop: string) {
+      if (prop in target) return target[prop];
+      if (prop === 'fillText') return (text: string) => texts.push(text);
+      if (prop === 'createRadialGradient') return () => ({ addColorStop() {} });
+      if (prop === 'measureText') return (text: string) => ({ width: text.length * 10 });
+      return () => calls.push(prop);
+    },
+    set(target, prop: string, value) {
+      target[prop] = value;
+      return true;
+    },
+  });
+  return { ctx: ctx as unknown as CanvasRenderingContext2D, texts, calls };
+}
+
+const clock = { time: '9:41', date: 'Sunday 18 October' };
+
+describe('lockClock', () => {
+  it('shows the visitor’s time and date the way a lock screen does', () => {
+    expect(lockClock(new Date(2026, 9, 18, 9, 41))).toEqual({ time: '9:41', date: 'Sunday 18 October' });
+    expect(lockClock(new Date(2026, 9, 18, 21, 5)).time).toBe('21:05');
+  });
+});
+
+describe('drawLockScreen', () => {
+  it('draws the date, the clock and the notification', () => {
+    const { ctx, texts } = fakeContext();
+    drawLockScreen(ctx, 360, 752, { ...clock, faceId: 0 });
+    expect(texts).toEqual(expect.arrayContaining([clock.date, clock.time, LOCK_NOTE.from, LOCK_NOTE.when, LOCK_NOTE.text]));
+  });
+
+  it('adds the Face ID ring only once it has started', () => {
+    const idle = fakeContext();
+    drawLockScreen(idle.ctx, 360, 752, { ...clock, faceId: 0 });
+    const scanning = fakeContext();
+    drawLockScreen(scanning.ctx, 360, 752, { ...clock, faceId: 0.5 });
+    const arcs = (calls: string[]) => calls.filter((c) => c === 'arc').length;
+    expect(arcs(idle.calls)).toBe(0);
+    expect(arcs(scanning.calls)).toBeGreaterThan(0);
+  });
+});
+```
+
+- [ ] **Step 3: Run the test and check it fails.**
+  - Run: `npx vitest run src/ui/lockScreen.test.ts`
+  - Expected: FAIL, because `./lockScreen` does not exist.
+
+- [ ] **Step 4: Implement the drawing.** Create `src/ui/lockScreen.ts`:
+
+```ts
+/**
+ * The contact phone's lock screen, "liquid glass": pastel blooms behind a translucent clock and a frosted
+ * notification. Plain Canvas 2D, so the 3D phone's screen texture and the no-WebGL phone draw the same picture.
+ */
+
+export interface LockState {
+  time: string;
+  date: string;
+  /** 0..1: the Face ID ring sweeping round; 1 is a tick; 0 hides the glyph. */
+  faceId: number;
+}
+
+export const LOCK_NOTE = { from: 'Supakorn', when: 'now', text: 'made it to the bottom? say hi 👋' };
+
+const FONT = '"Inter Tight", system-ui, sans-serif';
+
+/** The visitor's own time and date, as a lock screen shows them: "9:41", "Sunday 18 October". */
+export function lockClock(now: Date): Pick<LockState, 'time' | 'date'> {
+  return {
+    time: `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`,
+    date: now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }),
+  };
+}
+
+function bloom(ctx: CanvasRenderingContext2D, w: number, h: number, x: number, y: number, r: number, color: string) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, color);
+  g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function faceIdGlyph(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, progress: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, r * 1.4, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.32)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.lineWidth = r * 0.13;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  if (progress < 1) {
+    ctx.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
+  } else {
+    ctx.moveTo(x - r * 0.5, y);
+    ctx.lineTo(x - r * 0.12, y + r * 0.4);
+    ctx.lineTo(x + r * 0.55, y - r * 0.38);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+export function drawLockScreen(ctx: CanvasRenderingContext2D, w: number, h: number, s: LockState): void {
+  ctx.fillStyle = '#e9ecf5';
+  ctx.fillRect(0, 0, w, h);
+  bloom(ctx, w, h, 0.3 * w, 0.3 * h, 0.75 * w, 'rgba(201, 214, 255, 1)');
+  bloom(ctx, w, h, 0.75 * w, 0.65 * h, 0.7 * w, 'rgba(255, 209, 232, 1)');
+  bloom(ctx, w, h, 0.4 * w, 0.92 * h, 0.85 * w, 'rgba(184, 240, 228, 1)');
+  bloom(ctx, w, h, 0.5 * w, 0.26 * h, 0.5 * w, 'rgba(255, 255, 255, 0.55)');
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = 'rgba(30, 30, 50, 0.6)';
+  ctx.font = `600 ${Math.round(h * 0.03)}px ${FONT}`;
+  ctx.fillText(s.date, w / 2, h * 0.12);
+
+  // the clock: clear glass lifted by a soft shadow
+  ctx.save();
+  ctx.shadowColor = 'rgba(80, 90, 140, 0.35)';
+  ctx.shadowBlur = h * 0.04;
+  ctx.shadowOffsetY = h * 0.006;
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+  ctx.font = `700 ${Math.round(h * 0.19)}px ${FONT}`;
+  ctx.fillText(s.time, w / 2, h * 0.3);
+  ctx.restore();
+
+  // the notification: a frosted pill near the bottom
+  const nx = w * 0.06;
+  const nw = w * 0.88;
+  const nh = h * 0.11;
+  const ny = h * 0.79;
+  ctx.save();
+  ctx.shadowColor = 'rgba(80, 90, 140, 0.18)';
+  ctx.shadowBlur = h * 0.03;
+  roundRect(ctx, nx, ny, nw, nh, h * 0.028);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.42)';
+  ctx.fill();
+  ctx.restore();
+  roundRect(ctx, nx, ny, nw, nh, h * 0.028);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+  ctx.lineWidth = Math.max(1, h * 0.002);
+  ctx.stroke();
+
+  const tx = nx + w * 0.05;
+  const small = Math.round(h * 0.026);
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#1d1d1f';
+  ctx.font = `700 ${small}px ${FONT}`;
+  ctx.fillText(LOCK_NOTE.from, tx, ny + nh * 0.42);
+  const fromWidth = ctx.measureText(`${LOCK_NOTE.from} `).width;
+  ctx.fillStyle = 'rgba(29, 29, 31, 0.55)';
+  ctx.font = `600 ${small}px ${FONT}`;
+  ctx.fillText(LOCK_NOTE.when, tx + fromWidth, ny + nh * 0.42);
+  ctx.fillStyle = '#1d1d1f';
+  ctx.font = `500 ${small}px ${FONT}`;
+  ctx.fillText(LOCK_NOTE.text, tx, ny + nh * 0.76, nw - w * 0.1);
+
+  // home indicator
+  roundRect(ctx, w * 0.37, h * 0.966, w * 0.26, h * 0.006, h * 0.003);
+  ctx.fillStyle = 'rgba(30, 30, 50, 0.35)';
+  ctx.fill();
+
+  if (s.faceId > 0) faceIdGlyph(ctx, w / 2, h * 0.62, w * 0.1, s.faceId);
+}
+```
+
+- [ ] **Step 5: Run the test and check it passes.**
+  - Run: `npx vitest run src/ui/lockScreen.test.ts`
+  - Expected: PASS (3 tests).
+
+- [ ] **Step 6: Share the screen shader.** In `src/scene/pictures.ts`, add the function below, and in `createPictures` replace the inline `new ShaderMaterial({...})` with `const material = screenMaterial(aspect);`:
+
+```ts
+/** The screen-face material: a texture in rounded corners, faded by uAmt. */
+export function screenMaterial(aspect: number): ShaderMaterial {
+  return new ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    uniforms: {
+      uImg: { value: null },
+      uAmt: { value: 0 },
+      uPlaneAsp: { value: aspect },
+      uScale: { value: new Vector2(1, 1) },
+      uOffset: { value: new Vector2(0, 0) },
+    },
+    vertexShader: VERT,
+    fragmentShader: FRAG,
+  });
+}
+```
+
+Run `npx vitest run src/scene/pictures.test.ts`. Expected: PASS, with no behaviour change.
+
+- [ ] **Step 7: The lock screen on the 3D phone.** Create `src/scene/lockPlane.ts`:
+
+```ts
+import { CanvasTexture, Mesh, PlaneGeometry } from 'three';
+import { drawLockScreen, lockClock } from '../ui/lockScreen';
+import type { PlaneSpec } from './objects/types';
+import { screenMaterial } from './pictures';
+
+const HEIGHT = 1024;
+const FACE_ID_STEPS = 24;
+
+export interface LockPlane {
+  mesh: Mesh;
+  /** amount: 0..1 opacity over the dark glass; faceId: 0..1 Face ID progress. */
+  update(amount: number, faceId: number): void;
+  dispose(): void;
+}
+
+/** The contact phone's lock screen on its 3D screen, repainted only when the minute or the Face ID step changes. */
+export function createLockPlane(plane: PlaneSpec): LockPlane {
+  const aspect = plane.size[0] / plane.size[1];
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(HEIGHT * aspect);
+  canvas.height = HEIGHT;
+  const ctx = canvas.getContext('2d');
+  const texture = new CanvasTexture(canvas);
+  const material = screenMaterial(aspect);
+  material.uniforms.uImg.value = texture;
+  const mesh = new Mesh(new PlaneGeometry(1, 1), material);
+  mesh.renderOrder = 1;
+  mesh.position.set(...plane.pos);
+  mesh.rotation.set(...plane.rot);
+  mesh.scale.set(plane.size[0], plane.size[1], 1);
+  mesh.visible = false;
+  let painted = '';
+
+  return {
+    mesh,
+    update(amount, faceId) {
+      mesh.visible = amount > 0.001;
+      material.uniforms.uAmt.value = amount;
+      if (!mesh.visible || !ctx) return;
+      const clock = lockClock(new Date());
+      const step = Math.round(faceId * FACE_ID_STEPS) / FACE_ID_STEPS;
+      const key = `${clock.time}|${step}`;
+      if (key === painted) return;
+      painted = key;
+      drawLockScreen(ctx, canvas.width, canvas.height, { ...clock, faceId: step });
+      texture.needsUpdate = true;
+    },
+    dispose() {
+      mesh.geometry.dispose();
+      material.dispose();
+      texture.dispose();
+    },
+  };
+}
+```
+
+In `src/scene/createScene.ts`:
+  - Import `createLockPlane` from `./lockPlane`, and add `clamp01` to the `./math` import.
+  - After `scene.add(group);`, add:
+
+```ts
+  const lock = slotScreen ? createLockPlane(slotScreen) : null;
+  if (lock) group.add(lock.mesh);
+```
+
+  - Right after the `if (on !== slotOn) { ... }` block, add:
+
+```ts
+    // the lock screen wakes halfway through the arrival, runs Face ID from 80%, and gives way to the chat
+    lock?.update(
+      opts.centered ? 0 : settle * smoothstep(arriveNow, 0.5, 0.6) * (1 - smoothstep(arriveNow, 0.97, 1)),
+      clamp01((arriveNow - 0.8) / 0.17),
+    );
+```
+
+  - In `dispose()`, add `lock?.dispose();` after the pictures loop.
+
+- [ ] **Step 8: The lock screen in the CSS phone.** Create `src/ui/LockCanvas.tsx`:
+
+```tsx
+import { useEffect, useRef } from 'react';
+import { drawLockScreen, lockClock } from './lockScreen';
+
+/** The lock screen for the CSS phone (no WebGL); the 3D phone paints the same picture on its screen. */
+export function LockCanvas() {
+  const ref = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = ref.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+    let alive = true;
+    const paint = () => {
+      if (!alive) return;
+      const r = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(r.width * dpr);
+      canvas.height = Math.round(r.height * dpr);
+      drawLockScreen(ctx, canvas.width, canvas.height, { ...lockClock(new Date()), faceId: 1 });
+    };
+    paint();
+    document.fonts?.ready.then(paint); // the clock is set in Inter Tight
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  return <canvas className="phone-lock" ref={ref} aria-hidden="true" />;
+}
+```
+
+In `src/ui/Contact.tsx`, import `LockCanvas` and render `<LockCanvas />` inside the slot, just before `<PhoneChat ... />`.
+
+- [ ] **Step 9: Stage styles.** Append to the contact styles in `src/styles.css`:
+
+```css
+/* the screen follows the arrival (data-stage, set by SceneLayer): dark, the lock screen from halfway, the chat once landed.
+   With the scene running (data-scene), the 3D screen paints the lock screen and the slot only ever shows the chat */
+.phone-slot {
+  position: relative;
+}
+.phone-lock {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: opacity 0.4s;
+}
+.phone-slot[data-stage='off'] .phone-lock,
+.phone-slot[data-stage='open'] .phone-lock,
+.phone-slot[data-scene] .phone-lock {
+  opacity: 0;
+}
+.phone-slot .chat {
+  transition:
+    opacity 0.3s,
+    visibility 0.3s;
+}
+.phone-slot:not([data-stage='open']) .chat {
+  opacity: 0;
+  visibility: hidden;
+}
+```
+
+- [ ] **Step 10: Run everything and build.**
+  - Run: `npm test && npm run build`
+  - Expected: PASS with clean output, and the size check passes.
+
+- [ ] **Step 11: Commit.**
+
+```bash
+git add -A src
+git commit -m "feat: the contact phone wakes to a liquid-glass lock screen before the chat" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01PVsCofSvenEXaFKqp3MYGN"
+```
+
+---
+
+### Task 9: Stills, section captures and a visual pass
 
 **Files:**
 - Modify: `scripts/capture.mjs`, `package.json`, `README.md`, `docs/superpowers/specs/2026-10-16-portfolio-liquid-objects-design.md`
 - Regenerate: `public/fallback/*.webp` (only 7 should change visibly)
 
 **Interfaces:**
-- Consumes: the full page from Tasks 3–7.
+- Consumes: the full page from Tasks 3–8.
 - Produces: `npm run capture:sections`, which writes `review/sections-<size>-<theme>-<label>.png` (git-ignored).
 
 - [ ] **Step 1: Add a `sections` mode to `scripts/capture.mjs`.**
@@ -1852,6 +2371,10 @@ const scrollTo = (page, expr) =>
 
 const aboutAt = (f) =>
   `(() => { const r = document.querySelector('#about').getBoundingClientRect(); return scrollY + r.top + Math.max(0, r.height - innerHeight) * ${f}; })()`;
+
+// scrollY at which the contact phone's arrival is f (0..1): arrive = (scrollY + vh - contactTop) / vh
+const contactAt = (f) =>
+  `scrollY + document.querySelector('#contact').getBoundingClientRect().top - innerHeight * ${1 - f}`;
 
 // the lower parts, in page order; each run() leaves the page ready for a screenshot
 const SECTION_SHOTS = [
@@ -1875,6 +2398,8 @@ const SECTION_SHOTS = [
   { label: 'about-start', run: (page) => scrollTo(page, aboutAt(0)) },
   { label: 'about-middle', run: (page) => scrollTo(page, aboutAt(0.5)) },
   { label: 'about-end', run: (page) => scrollTo(page, aboutAt(0.99)) },
+  { label: 'contact-roll', run: (page) => scrollTo(page, contactAt(0.3)) },
+  { label: 'contact-lock', run: (page) => scrollTo(page, contactAt(0.88)) },
   { label: 'contact', run: (page) => scrollTo(page, 'document.documentElement.scrollHeight') },
   {
     label: 'contact-chat',
@@ -1927,8 +2452,9 @@ const SECTION_SHOTS = [
     2. **`wall`:** 10 names at large size, with no 3D object visible.
     3. **`wall-card`:** the card sits beside the pointer, dark in light mode and light in dark mode.
     4. **`about-*`:** the title is pinned, the panels move sideways across the three desktop shots, and no panel's text is clipped at the bottom. On mobile, the first panel and the dots show.
-    5. **`contact`:** on desktop the phone sits right of the text, the chat is inside the phone's screen with no visible gap between the chat edge and the 3D body, and there's no second (CSS) bezel. On mobile the phone is below the text.
-    6. **`contact-chat`:** the question bubble and answer bubble are readable over the glass.
+    5. **`contact-roll` / `contact-lock`:** at 30% the phone is partly in from the right edge, turned edge-on, with a dark screen. At 88% it is nearly face-on, showing the liquid-glass lock screen (pastel blooms, clock, notification) with the Face ID ring part-way round.
+    6. **`contact`:** on desktop the phone sits right of the text, the chat is inside the phone's screen with no visible gap between the chat edge and the 3D body, and there's no second (CSS) bezel. On mobile the phone is below the text.
+    7. **`contact-chat`:** the question bubble and answer bubble are readable over the glass.
   - Fix any problem in the CSS or code (and rerun `npm test`) before moving on.
   - If the chat and the 3D screen are misaligned by more than a few pixels, check that `.phone-slot`'s aspect matches the phone's screen plane and that `fitToSlot` gets the canvas size.
 
