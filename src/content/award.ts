@@ -7,6 +7,6 @@ export const bestPaper: Award = {
   line: 'ESNIDSaaS, a paper on network intrusion detection as a cloud service, won the Best Paper Award.',
   link: { label: 'Read about the research', href: '#esnidsaas' },
   object: 'frame',
-  // the frame is landscape: keep the title and authors in view
-  pics: [{ src: '/shots/esnidsaas.webp', focus: [0.5, 0.2] }],
+  // the certificate itself, framed
+  pics: [{ src: '/shots/best-paper-certificate.webp' }],
 };
