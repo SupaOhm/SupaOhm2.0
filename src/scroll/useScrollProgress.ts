@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { anchorPoint, arriveAmount, dipAmount, progressFromAnchors, sceneFade, scrollYForProgress } from './progress';
 
-/** The scene starts back this many viewports before Contact's top, so it is fully back by arrive ≈ 0.3 and the roll shows. */
-const RETURN_LEAD = 0.45;
+/** The scene starts back this many viewports before Contact's top, so it is fully back before the phone rises into view. */
+const RETURN_LEAD = 0.6;
 
 export interface ScrollSample {
   /** Object-state progress, 0..n-1. */
@@ -11,7 +11,7 @@ export interface ScrollSample {
   exit: number;
   /** 0..1: how close a part heading is to the middle of the screen. */
   dip: number;
-  /** 0..1: the contact phone's arrival, over the last screen of the page. */
+  /** 0..1: the contact phone's arrival, from its slot rising into view to the bottom of the page. */
   arrive: number;
 }
 
@@ -30,6 +30,8 @@ export function useScrollProgress(onSample: (s: ScrollSample) => void, initialP:
     let anchors: number[] = [];
     let exitTop = Infinity;
     let returnTop = Infinity;
+    let arriveStart = Infinity;
+    let arriveEnd = Infinity;
     let dips: number[] = [];
     let frame = 0;
 
@@ -45,6 +47,9 @@ export function useScrollProgress(onSample: (s: ScrollSample) => void, initialP:
       const pageTop = (el: Element | null) => (el ? el.getBoundingClientRect().top + window.scrollY : Infinity);
       exitTop = pageTop(document.querySelector('[data-scene-exit]'));
       returnTop = pageTop(document.querySelector('[data-scene-return]'));
+      // the phone's arrival runs from its slot's top reaching the bottom of the screen to the bottom of the page
+      arriveStart = pageTop(document.querySelector('[data-phone-slot]')) - vh / 2;
+      arriveEnd = Math.min(returnTop + vh / 2, document.documentElement.scrollHeight - vh / 2);
       dips = [...document.querySelectorAll('[data-scene-dip]')].map((el) => {
         const r = el.getBoundingClientRect();
         return r.top + window.scrollY + r.height / 2;
@@ -59,7 +64,7 @@ export function useScrollProgress(onSample: (s: ScrollSample) => void, initialP:
         p: progressFromAnchors(y, anchors),
         exit: sceneFade(y, exitTop, returnTop - vh * RETURN_LEAD, vh),
         dip: dipAmount(y, dips, vh),
-        arrive: arriveAmount(y, returnTop, vh),
+        arrive: arriveAmount(y, arriveStart, arriveEnd),
       });
     };
 
