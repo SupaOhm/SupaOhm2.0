@@ -101,6 +101,12 @@ describe('content', () => {
     }
   });
 
+  it('points every project card picture at a real file', () => {
+    for (const pic of projects.flatMap((p) => (p.pic ? [p.pic] : []))) {
+      expect(existsSync(join(ROOT, 'public', pic)), pic).toBe(true);
+    }
+  });
+
   it('lists the five featured items in page order', () => {
     expect(featured.map((f) => f.id)).toEqual(['mizuhada', 'baka', 'esnidsaas', 'ma-zerophish', 'acklab']);
     expect(featured.map((f) => f.object)).toEqual(['laptop', 'frame', 'reader', 'phone', 'tablet']);
