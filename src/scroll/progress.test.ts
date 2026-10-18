@@ -93,21 +93,26 @@ describe('sceneFade', () => {
 });
 
 describe('arriveAmount', () => {
-  it('runs from 0 to 1 over one viewport, ending with the return element at the top of the screen', () => {
-    expect(arriveAmount(9000 - 400, 9000, 800)).toBe(0);
-    expect(arriveAmount(9000, 9000, 800)).toBeCloseTo(0.5);
-    expect(arriveAmount(9000 + 400, 9000, 800)).toBe(1);
+  it('runs from 0 to 1 between the start and the end', () => {
+    expect(arriveAmount(8500, 9000, 9600)).toBe(0);
+    expect(arriveAmount(9300, 9000, 9600)).toBeCloseTo(0.5);
+    expect(arriveAmount(9600, 9000, 9600)).toBe(1);
   });
 
-  it('is 0 without a return element', () => {
-    expect(arriveAmount(20000, Infinity, 800)).toBe(0);
+  it('jumps straight to 1 at the end when the page is too short for a run-up', () => {
+    expect(arriveAmount(8999, 9000, 9000)).toBe(0);
+    expect(arriveAmount(9000, 9000, 9000)).toBe(1);
+  });
+
+  it('is 0 without a phone slot', () => {
+    expect(arriveAmount(20000, Infinity, Infinity)).toBe(0);
   });
 });
 
 describe('phoneStage', () => {
-  it('is dark, then locked from halfway, then open once the phone has landed', () => {
-    expect(phoneStage(0.2)).toBe('off');
-    expect(phoneStage(0.5)).toBe('lock');
+  it('is dark while the phone turns round, locked once it faces you, open at the bottom', () => {
+    expect(phoneStage(0.5)).toBe('off');
+    expect(phoneStage(0.55)).toBe('lock');
     expect(phoneStage(0.96)).toBe('lock');
     expect(phoneStage(0.97)).toBe('open');
   });

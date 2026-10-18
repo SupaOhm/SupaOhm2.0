@@ -2,7 +2,7 @@ import { ACESFilmicToneMapping, Color, DirectionalLight, Group, Mesh, PMREMGener
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { backgroundCenter, createBackground } from './background';
 import { buildMorphGeometry } from './geometry';
-import { CAMERA_Z, FOV, fitToSlot, placement, viewSize } from './layout';
+import { CAMERA_Z, FOV, fitToSlot, placement } from './layout';
 import { createObjectMaterial } from './material';
 import { clamp01, ease, lerp, smoothstep } from './math';
 import { blob, resolveObject } from './objects';
@@ -46,7 +46,7 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
   const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   const pictures = objects.map((o, i) => createPictures(o.planes, items[i].pics, items[i].label, anisotropy));
 
-  // a slot state (the contact phone) rolls in and settles face-on behind the page's [data-phone-slot]
+  // a slot state (the contact phone) sits behind the page's [data-phone-slot] and turns round to face you
   const slotIndex = items.findIndex((item) => item.slot);
   const slotScreen = slotIndex >= 0 ? objects[slotIndex].planes[0] : undefined;
   let slotOn = false;
@@ -150,28 +150,24 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
         : null;
     const settle = fit ? smoothstep(slotW, 0.5, 1) : 0;
     const free = 1 - settle;
-    // the arrival: from just past the right edge, edge-on and tilted (roll 1), to face-on in the slot (roll 0)
+    // the arrival: the phone already sits in its slot with its back to you (turn 1) and turns to face you (turn 0)
     arriveNow = still ? arrive : arriveNow + (arrive - arriveNow) * (1 - Math.exp(-dt * 10));
-    const roll = opts.reducedMotion ? 0 : 1 - ease(arriveNow);
+    const turn = opts.reducedMotion ? 0 : 1 - ease(clamp01((arriveNow - 0.05) / 0.5));
     const on = settle > 0.98 && arriveNow >= 0.97;
     if (on !== slotOn) {
       slotOn = on;
       opts.onSlotChange?.(on);
     }
-    // the lock screen wakes halfway through the arrival, runs Face ID from 80%, and gives way to the chat
+    // the lock screen wakes once the phone faces you, runs Face ID from 75%, and gives way to the chat
     lock?.update(
-      opts.centered ? 0 : settle * smoothstep(arriveNow, 0.5, 0.6) * (1 - smoothstep(arriveNow, 0.97, 1)),
-      clamp01((arriveNow - 0.8) / 0.17),
+      opts.centered ? 0 : settle * smoothstep(arriveNow, 0.55, 0.65) * (1 - smoothstep(arriveNow, 0.97, 1)),
+      clamp01((arriveNow - 0.75) / 0.2),
     );
     // capture stills leave a slot state empty: the page draws its own phone there
     mesh.visible = !(opts.centered && slotW > 0.5);
-    const offX = viewSize(camera.aspect).w / 2 + (fit?.scale ?? 0) * 1.2;
-    const slotX = fit ? lerp(fit.x, offX, roll) : 0;
-    // it rolls in at the normal placement's height and descends into the slot as it lands
-    const slotY = fit ? lerp(fit.y, place.y, roll) : 0;
-    group.position.set(lerp(posX.x, slotX, settle), lerp(posY.x, slotY, settle), 0);
+    group.position.set(lerp(posX.x, fit?.x ?? 0, settle), lerp(posY.x, fit?.y ?? 0, settle), 0);
 
-    // resting angle (turned toward the text), a full spin and wobble through the liquid; in a slot, only the arrival roll
+    // resting angle (turned toward the text), a full spin and wobble through the liquid; in a slot, only the arrival turn
     const restA = objects[k].rest;
     const restB = objects[k + 1].rest;
     const sway = still ? 0 : Math.sin(t * 0.4) * 0.06;
@@ -180,8 +176,8 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
     const spin = opts.reducedMotion ? 0 : ease(s.g) * Math.PI * 2 * dir;
     group.rotation.set(
       (restA[0] * wA + restB[0] * wB + 0.15 * wBlob + tiltX + sway * 0.5 + wBlob * 0.5) * free,
-      ((restA[1] * wA + restB[1] * wB) * dir + tiltY + sway + spin) * free - 1.47 * roll * settle,
-      wBlob * Math.sin(t * 1.6) * 0.18 * free + 0.14 * roll * settle,
+      ((restA[1] * wA + restB[1] * wB) * dir + tiltY + sway + spin) * free + Math.PI * turn * settle,
+      wBlob * Math.sin(t * 1.6) * 0.18 * free,
     );
 
     // swell with overshoot, squash and stretch from sideways speed (units per frame at 60 fps)

@@ -52,16 +52,17 @@ export function sceneFade(y: number, exitTop: number, returnTop: number, vh: num
 }
 
 /**
- * The contact phone's arrival, 0..1 over one viewport of scrolling: it starts with the return element's top
- * half a screen below the middle and ends with it at the top of the screen (the bottom of the page).
+ * The contact phone's arrival, 0..1 as the middle of the viewport goes from `start` (the phone's slot rising
+ * into view) to `end` (the bottom of the page). 0 when there is no slot.
  */
-export function arriveAmount(y: number, returnTop: number, vh: number): number {
-  return clamp01((y - (returnTop - vh / 2)) / vh);
+export function arriveAmount(y: number, start: number, end: number): number {
+  if (!Number.isFinite(start)) return 0;
+  return end > start ? clamp01((y - start) / (end - start)) : y >= end ? 1 : 0;
 }
 
 export type PhoneStage = 'off' | 'lock' | 'open';
 
-/** The contact phone's screen along its arrival: dark, the lock screen from halfway, unlocked once landed. */
+/** The contact phone's screen along its arrival: dark while it turns round, the lock screen once it faces you, unlocked at the bottom. */
 export function phoneStage(arrive: number): PhoneStage {
-  return arrive < 0.5 ? 'off' : arrive < 0.97 ? 'lock' : 'open';
+  return arrive < 0.55 ? 'off' : arrive < 0.97 ? 'lock' : 'open';
 }
