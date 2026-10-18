@@ -36,6 +36,8 @@ export interface Project {
   line: string;
   tech?: string;
   href?: string;
+  /** A picture at the top of its card, from public/shots/projects. */
+  pic?: string;
 }
 
 /** The Best Paper section after the hero: the award, with the paper's first page framed. */

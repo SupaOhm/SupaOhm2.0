@@ -254,6 +254,15 @@ p {
 .wall-card a {
   color: inherit;
 }
+.wall-pic {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: top;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
 .wall-tech {
   font-size: 13px;
   opacity: 0.65;

@@ -18,7 +18,8 @@ export const featured: FeaturedItem[] = [
     ],
     links: [],
     object: 'laptop',
-    pics: [{ src: '/shots/mizuhada.placeholder.webp' }],
+    // the company's logo as a splash screen: no product UI or company data
+    pics: [{ src: '/shots/mizuhada.webp' }],
   },
   {
     id: 'baka',
@@ -59,7 +60,8 @@ export const featured: FeaturedItem[] = [
     figures: [],
     links: [],
     object: 'phone',
-    pics: [{ src: '/shots/ma-zerophish.placeholder.webp' }],
+    // a title page drawn for the site; the paper's own figures stay private until it is published
+    pics: [{ src: '/shots/ma-zerophish.webp' }],
   },
   {
     id: 'acklab',
@@ -72,6 +74,6 @@ export const featured: FeaturedItem[] = [
     figures: [],
     links: [{ label: 'GitHub', href: 'https://github.com/SupaOhm/AckLab' }],
     object: 'tablet',
-    pics: [{ src: '/shots/acklab.placeholder.webp' }],
+    pics: [{ src: '/shots/acklab.webp' }],
   },
 ];

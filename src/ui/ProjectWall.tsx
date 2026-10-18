@@ -9,6 +9,7 @@ const OFFSET = 18;
 function CardBody({ project, link }: { project: Project; link: boolean }) {
   return (
     <>
+      {project.pic && <img className="wall-pic" src={project.pic} alt="" loading="lazy" />}
       <p>{project.line}</p>
       {project.tech && <p className="wall-tech">{project.tech}</p>}
       {project.href &&
