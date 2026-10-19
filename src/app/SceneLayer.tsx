@@ -4,6 +4,7 @@ import { phoneStage, type PhoneStage } from '../scroll/progress';
 import { usePrefersReducedMotion } from '../scroll/usePrefersReducedMotion';
 import { useScrollProgress, type ScrollSample } from '../scroll/useScrollProgress';
 import { detectSceneMode } from './capability';
+import { stageY } from './stage';
 import { StaticFallback } from './StaticFallback';
 
 type Status = 'loading' | 'ready' | 'static';
@@ -102,6 +103,7 @@ export function SceneLayer({ items, theme, capture = false }: { items: SceneItem
                 const r = el.getBoundingClientRect();
                 return { left: r.left, top: r.top, width: r.width, height: r.height };
               },
+          getStage: capture ? undefined : (i) => stageY(i, items),
           onSlotChange: (on) => {
             slotOnRef.current = on;
             syncSlot();

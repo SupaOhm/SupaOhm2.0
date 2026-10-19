@@ -38,6 +38,8 @@ export interface SceneOptions {
   onReady?: () => void;
   /** The page's slot rect for a `slot` state, in viewport CSS pixels; null when there is none. */
   getSlot?: () => SlotRect | null;
+  /** Narrow screens: the viewport y (CSS px) of state i's stage, where its object sits; null when the page has none. */
+  getStage?: (i: number) => number | null;
   /** Called when a `slot` state settles over its slot (true) or leaves it (false). */
   onSlotChange?: (on: boolean) => void;
 }

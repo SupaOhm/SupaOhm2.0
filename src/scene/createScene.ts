@@ -2,7 +2,7 @@ import { ACESFilmicToneMapping, Color, DirectionalLight, Group, Mesh, PMREMGener
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { backgroundCenter, createBackground } from './background';
 import { buildMorphGeometry } from './geometry';
-import { CAMERA_Z, FOV, fitToSlot, placement } from './layout';
+import { CAMERA_Z, FOV, fitToSlot, placement, screenToWorldY } from './layout';
 import { createObjectMaterial } from './material';
 import { clamp01, ease, lerp, smoothstep } from './math';
 import { blob, resolveObject } from './objects';
@@ -101,7 +101,7 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
     else smooth += (target - smooth) * (1 - Math.exp(-dt * 3));
 
     const s = stepState(smooth, STATE_COUNT, opts.reducedMotion);
-    const { k, wA, wBlob, wB, fade, dir } = s;
+    const { k, wA, wBlob, wB, fade, dir, near } = s;
 
     // shape: object k melts into the blob, the blob sets into object k+1
     const influences = mesh.morphTargetInfluences!;
@@ -119,11 +119,14 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
       pic.setAmount(smoothstep(w, 0.82, 1) * fade);
     });
 
-    // position: opposite the text, following on a springy, liquid path
+    // position: opposite the text, following on a springy, liquid path. Narrow screens instead keep the object in
+    // its section's empty top band, moving with the page (a spring would trail the copy and drift over it)
     const mode = opts.centered ? 'centered' : window.innerWidth >= 800 ? 'wide' : 'narrow';
     const place = placement(camera.aspect, mode);
+    const camZ = CAMERA_Z - wBlob * 1.1;
+    const stageAt = mode === 'narrow' ? (opts.getStage?.(near) ?? null) : null;
     const tx = dir * place.side;
-    const ty = place.y;
+    const ty = stageAt === null ? place.y : screenToWorldY(stageAt, canvas.clientHeight || window.innerHeight, camZ);
     const swellTarget = 1 + 0.2 * wBlob;
     if (!primed || still) {
       posX.set(tx);
@@ -131,7 +134,8 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
       swell.set(swellTarget);
     } else {
       posX.step(tx, dt);
-      posY.step(ty, dt);
+      if (stageAt === null) posY.step(ty, dt);
+      else posY.set(ty);
       swell.step(swellTarget, dt);
     }
     primed = true;
@@ -182,11 +186,13 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
 
     // swell with overshoot, squash and stretch from sideways speed (units per frame at 60 fps)
     const stretch = (still ? 0 : Math.min(0.35, (Math.abs(posX.v) / 60) * 2.6)) * free;
-    // part headings passing the middle of the screen melt the object down to a droplet
+    // part headings passing the middle of the screen melt the object down to a droplet; on narrow screens the
+    // headings sit between sections, clear of every stage, so there is nothing to make room for
     dipNow = still ? dip : dipNow + (dip - dipNow) * (1 - Math.exp(-dt * 10));
-    const size = lerp(swell.x * place.fit, fit?.scale ?? 0, settle) * (1 - 0.82 * dipNow);
+    const melt = mode === 'narrow' ? 0 : dipNow;
+    const size = lerp(swell.x * place.fit, fit?.scale ?? 0, settle) * (1 - 0.82 * melt);
     group.scale.set(size * (1 + stretch), size * (1 - stretch * 0.6), size);
-    camera.position.z = CAMERA_Z - wBlob * 1.1;
+    camera.position.z = camZ;
 
     // per-section glow, blended through the melt
     const pal = PALETTE[theme];
