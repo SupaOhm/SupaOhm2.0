@@ -27,7 +27,7 @@ Chosen in brainstorming: **scrolls with its section** (over "text on a frosted p
 ## 4. Behaviour (narrow only: `innerWidth < 800`, not `centered`)
 
 1. **Follow the stage.** Each frame, the object's y is the world-space y of the near state's stage centre. x stays 0 and the scale stays `placement(…, 'narrow').fit`. The object moves 1:1 with the page, so its stage's empty band always contains it.
-2. **Hand-over in the melt.** The outgoing object follows its own stage as it melts and scrolls up. At `g = 0.5`, where it is entirely blob, the object switches to the next state's stage and sets from blob into the next object as that stage rises into view. Narrow anchors stay as they are (`anchorPoint`: `p = k` when section k's top meets the viewport top), so `g = 0.5` falls at least 50vh of scroll past section k's top. By then the outgoing blob's centre is above the screen, and the jump to the stage below isn't noticeable.
+2. **Hand-over in the melt.** The outgoing object follows its own stage as it melts and scrolls up. At `g = 0.5`, where it is entirely blob, the object switches to the next state's stage and sets from blob into the next object as that stage rises into view. Narrow anchors stay as they are (`anchorPoint`: `p = k` when section k's top meets the viewport top), so `g = 0.5` falls at least 50vh of scroll past section k's top. By then the outgoing blob's centre is above the screen, so its jump is not noticeable. The incoming stage, however, is often already on screen at `g = 0.5`. So on narrow the object shrinks to nothing through the middle of the melt (`smoothstep(|2g − 1|, 0, 0.3)`) and grows again on its new stage. The background glow stays at the top band's resting centre on narrow.
 3. **No springs for y on narrow.** `posY` is set directly, not stepped, while following a stage. A spring would trail behind the page and drift over the copy. x has no motion on narrow anyway.
 4. **No dip on narrow.** The part-heading dip (`setDip`) scales the object by 1 on narrow. Headings sit between sections, outside any stage, and the stage rule keeps them clear.
 5. **The slot state (contact phone, state 7)** uses the centre of the page's phone slot (`[data-phone-slot]`) as its stage, not the Contact section's top band, which holds the "Say hello." copy on narrow screens. The blob forms at the slot, and `fitToSlot` takes over as it settles, as it does today. Between state 6 and 7 the scene is faded out anyway (project wall and About).
@@ -60,6 +60,8 @@ In `render`, when the mode is `'narrow'` and `opts.getStage` returns a number fo
 
 - `ty = screenToWorldY(stageY, h, CAMERA_Z - wBlob * 1.1)`, and `posY.set(ty)` (no spring).
 - The dip factor in `size` uses `dipNow * (mode === 'narrow' ? 0 : 1)`.
+- `size` is also multiplied by `smoothstep(|2g − 1|, 0, 0.3)` on narrow (not with reduced motion), so the object is nothing at the hand-over.
+- The background glow's centre uses `place.y` on narrow instead of the object's y.
 
 When `getStage` returns null, the current `place.y` path is used. The near state comes from the same `g < 0.5` rule as `dir`, which `stepState` already computes. Expose it as `near` on `StepState` so there is one definition.
 

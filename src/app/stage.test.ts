@@ -28,6 +28,7 @@ describe('stageY', () => {
   });
 
   it("is the phone slot's centre for a slot state", () => {
+    // a control: a slot state must ignore its own anchor and use the slot
     const contact = document.createElement('section');
     contact.dataset.anchor = '2';
     place(contact, 0, 900);
