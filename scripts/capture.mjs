@@ -233,7 +233,12 @@ try {
         returnByValue: true,
       });
       const frames = [];
-      for (let y = 0; y <= result.value; y += height / 2) {
+      // half a screen apart, and the last frame lands exactly on the page bottom (the Contact phone)
+      const max = result.value;
+      const ys = [];
+      for (let y = 0; y < max; y += height / 2) ys.push(y);
+      ys.push(max);
+      for (const y of ys) {
         await scrollTo(page, y);
         await sleep(1300); // the scroll smoothing and the melt settling
         const { data } = await page.send('Page.captureScreenshot', { format: 'png' });
