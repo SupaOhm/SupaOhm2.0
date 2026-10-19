@@ -4,6 +4,7 @@ import { phoneStage, type PhoneStage } from '../scroll/progress';
 import { usePrefersReducedMotion } from '../scroll/usePrefersReducedMotion';
 import { useScrollProgress, type ScrollSample } from '../scroll/useScrollProgress';
 import { detectSceneMode } from './capability';
+import { stageY } from './stage';
 import { StaticFallback } from './StaticFallback';
 
 type Status = 'loading' | 'ready' | 'static';
@@ -102,6 +103,7 @@ export function SceneLayer({ items, theme, capture = false }: { items: SceneItem
                 const r = el.getBoundingClientRect();
                 return { left: r.left, top: r.top, width: r.width, height: r.height };
               },
+          getStage: capture ? undefined : (i) => stageY(i, items),
           onSlotChange: (on) => {
             slotOnRef.current = on;
             syncSlot();
@@ -150,9 +152,14 @@ export function SceneLayer({ items, theme, capture = false }: { items: SceneItem
       }
       handleRef.current?.setActive(activeRef.current);
       if (layerRef.current) layerRef.current.style.opacity = String(1 - s.exit);
-      setFallbackState(clampState(s.p, items.length));
+      // the still (shown while loading or without WebGL, or after the scene is lost) sits on its state's stage on narrow
+      // screens (styles.css), so the stage is kept current whatever the status
+      const state = clampState(s.p, items.length);
+      const y = stageY(state, items);
+      if (layerRef.current && y !== null) layerRef.current.style.setProperty('--stage-y', `${y}px`);
+      setFallbackState(state);
     },
-    [capture, items.length],
+    [capture, items],
   );
   useScrollProgress(onSample, capture ? null : forcedP);
 
@@ -160,7 +167,12 @@ export function SceneLayer({ items, theme, capture = false }: { items: SceneItem
     <div className="scene" ref={layerRef} aria-hidden="true" data-status={status}>
       {status !== 'static' && <canvas key={generation} ref={canvasRef} />}
       {status !== 'ready' && (
-        <StaticFallback state={fallbackState} theme={theme} side={items[fallbackState]?.slot ? 'right' : undefined} />
+        <StaticFallback
+          state={fallbackState}
+          theme={theme}
+          side={items[fallbackState]?.slot ? 'right' : undefined}
+          slot={items[fallbackState]?.slot}
+        />
       )}
     </div>
   );

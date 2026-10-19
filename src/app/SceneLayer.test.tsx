@@ -4,6 +4,7 @@ import type { SceneHandle, SceneOptions } from '../scene/types';
 import { mockMatchMedia } from '../test/matchMedia';
 import { detectSceneMode } from './capability';
 import { SceneLayer } from './SceneLayer';
+import { stageCentre } from '../scroll/progress';
 import { SCENE_ITEMS } from './sceneItems';
 
 const { createScene, scroll } = vi.hoisted(() => ({
@@ -27,9 +28,65 @@ describe('SceneLayer', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
   afterEach(() => {
+    document.body.querySelectorAll('[data-anchor]').forEach((el) => el.remove());
     vi.useRealTimers();
     window.history.replaceState(null, '', '/');
     vi.restoreAllMocks();
+  });
+
+  it('moves the still image with the current state’s stage', () => {
+    vi.mocked(detectSceneMode).mockReturnValue('static');
+    const section = document.createElement('section');
+    section.dataset.anchor = '1';
+    vi.spyOn(section, 'getBoundingClientRect').mockReturnValue({ top: -200 } as DOMRect);
+    document.body.append(section);
+    const { container } = render(<SceneLayer items={SCENE_ITEMS} theme="light" />);
+    act(() => scroll.sample?.({ p: 1.2, exit: 0, dip: 0, arrive: 0 }));
+    const layer = container.querySelector<HTMLElement>('.scene')!;
+    expect(layer.style.getPropertyValue('--stage-y')).toBe(`${stageCentre(-200, window.innerHeight)}px`);
+  });
+
+  it('keeps the still image’s stage current while the scene is ready, for a fall back to the still', async () => {
+    createScene.mockImplementation((_c: HTMLCanvasElement, _i: unknown, o: SceneOptions) => {
+      o.onReady?.();
+      return handle();
+    });
+    const section = document.createElement('section');
+    section.dataset.anchor = '1';
+    vi.spyOn(section, 'getBoundingClientRect').mockReturnValue({ top: -200 } as DOMRect);
+    document.body.append(section);
+    const { container } = render(<SceneLayer items={SCENE_ITEMS} theme="light" />);
+    await waitFor(() => expect(container.querySelector('.scene')).toHaveAttribute('data-status', 'ready'));
+    act(() => scroll.sample?.({ p: 1.2, exit: 0, dip: 0, arrive: 0 }));
+    const layer = container.querySelector<HTMLElement>('.scene')!;
+    expect(layer.style.getPropertyValue('--stage-y')).toBe(`${stageCentre(-200, window.innerHeight)}px`);
+  });
+
+  it('marks the slot state’s still, which narrow screens hide behind the page’s own phone', () => {
+    vi.mocked(detectSceneMode).mockReturnValue('static');
+    render(<SceneLayer items={SCENE_ITEMS} theme="light" />);
+    act(() => scroll.sample?.({ p: SCENE_ITEMS.length - 1, exit: 0, dip: 0, arrive: 0 }));
+    expect(screen.getByTestId('scene-fallback')).toHaveAttribute('data-slot');
+  });
+
+  it("gives the scene each state's stage, read from the page", async () => {
+    createScene.mockReturnValue(handle());
+    render(<SceneLayer items={SCENE_ITEMS} theme="light" />);
+    await waitFor(() => expect(createScene).toHaveBeenCalled());
+    const opts = createScene.mock.calls.at(-1)![2] as SceneOptions;
+    const section = document.createElement('section');
+    section.dataset.anchor = '3';
+    vi.spyOn(section, 'getBoundingClientRect').mockReturnValue({ top: 120 } as DOMRect);
+    document.body.append(section);
+    expect(opts.getStage?.(3)).toBe(stageCentre(120, window.innerHeight));
+    expect(opts.getStage?.(4)).toBeNull();
+  });
+
+  it('gives a capture no stages: captures keep the object centred', async () => {
+    createScene.mockReturnValue(handle());
+    render(<SceneLayer items={SCENE_ITEMS} theme="light" capture />);
+    await waitFor(() => expect(createScene).toHaveBeenCalled());
+    expect((createScene.mock.calls.at(-1)![2] as SceneOptions).getStage).toBeUndefined();
   });
 
   it('passes the reduced-motion preference to the scene', async () => {

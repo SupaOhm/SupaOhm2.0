@@ -5,6 +5,8 @@
 //   node scripts/capture.mjs meta      → public/og.png, public/favicon-32.png, public/apple-touch-icon.png
 //                                        (run after fallback: they are cut from the hero pebble still)
 //   node scripts/capture.mjs sections  → review/sections-<size>-<theme>-<label>.png (scrolled views of the lower parts)
+//   node scripts/capture.mjs strip     → review/strip-mobile-<theme>-NN.png and -sheet-N.png (the narrow page a half
+//                                        screen at a time, to check that no copy runs over the object)
 import { spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -155,8 +157,8 @@ const SECTION_SHOTS = [
 ];
 
 const mode = process.argv[2];
-if (!['fallback', 'review', 'meta', 'sections'].includes(mode)) {
-  console.error('Usage: node scripts/capture.mjs <fallback|review|meta|sections>');
+if (!['fallback', 'review', 'meta', 'sections', 'strip'].includes(mode)) {
+  console.error('Usage: node scripts/capture.mjs <fallback|review|meta|sections|strip>');
   process.exit(1);
 }
 
@@ -216,6 +218,43 @@ try {
           writeFileSync(out, Buffer.from(data, 'base64'));
           console.log(`review/sections-${name}-${theme}-${shot.label}.png`);
         }
+      }
+    }
+  } else if (mode === 'strip') {
+    const outDir = path('../review/');
+    mkdirSync(outDir, { recursive: true });
+    const [width, height] = [390, 844];
+    for (const theme of THEMES) {
+      await page.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: true });
+      await page.send('Page.navigate', { url: `${BASE}?theme=${theme}` });
+      await sleep(SETTLE_MS);
+      const { result } = await page.send('Runtime.evaluate', {
+        expression: 'document.documentElement.scrollHeight - innerHeight',
+        returnByValue: true,
+      });
+      const frames = [];
+      // half a screen apart, and the last frame lands exactly on the page bottom (the Contact phone)
+      const max = result.value;
+      const ys = [];
+      for (let y = 0; y < max; y += height / 2) ys.push(y);
+      ys.push(max);
+      for (const y of ys) {
+        await scrollTo(page, y);
+        await sleep(1300); // the scroll smoothing and the melt settling
+        const { data } = await page.send('Page.captureScreenshot', { format: 'png' });
+        const name = `strip-mobile-${theme}-${String(frames.length).padStart(2, '0')}.png`;
+        writeFileSync(`${outDir}${name}`, Buffer.from(data, 'base64'));
+        frames.push(`${outDir}${name}`);
+        console.log(`review/${name}`);
+      }
+      // contact sheets, 4 × 2 frames each, for reviewing at a glance
+      for (let s = 0; s * 8 < frames.length; s++) {
+        const set = frames.slice(s * 8, s * 8 + 8);
+        await sharp({ create: { width: 4 * (width + 10), height: 2 * (height + 10), channels: 3, background: '#ff0000' } })
+          .composite(set.map((input, i) => ({ input, left: (i % 4) * (width + 10), top: Math.floor(i / 4) * (height + 10) })))
+          .png()
+          .toFile(`${outDir}strip-mobile-${theme}-sheet-${s}.png`);
+        console.log(`review/strip-mobile-${theme}-sheet-${s}.png`);
       }
     }
   } else {

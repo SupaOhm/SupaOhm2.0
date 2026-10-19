@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { anchorPoint, arriveAmount, dipAmount, exitFade, phoneStage, progressFromAnchors, sceneFade, scrollYForProgress } from './progress';
+import { anchorPoint, arriveAmount, dipAmount, exitFade, phoneStage, progressFromAnchors, sceneFade, scrollYForProgress, STAGE, stageCentre } from './progress';
+
+describe('stageCentre', () => {
+  it('is the middle of the top 55% of the viewport below a section top', () => {
+    expect(STAGE).toBe(0.55);
+    expect(stageCentre(0, 844)).toBeCloseTo(232.1, 6);
+    expect(stageCentre(-100, 844)).toBeCloseTo(132.1, 6);
+  });
+});
 
 describe('progressFromAnchors', () => {
   const c = [100, 300, 700];
