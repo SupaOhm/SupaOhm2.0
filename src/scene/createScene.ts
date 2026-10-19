@@ -210,8 +210,9 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
       b: wash,
       bar,
       t: opts.reducedMotion ? 0 : t,
-      // narrow: the glow stays in the top band; following the object, it would jump at every stage hand-over
-      center: backgroundCenter(group.position.x, mode === 'narrow' ? place.y : group.position.y, camera.position.z),
+      // narrow: the glow stays in the top band (following the object, it would jump at every stage hand-over) until
+      // the contact phone settles into its slot, where it follows the phone again
+      center: backgroundCenter(group.position.x, mode === 'narrow' ? lerp(place.y, group.position.y, settle) : group.position.y, camera.position.z),
       bars: opts.lite ? 0 : 1,
     });
     renderer.toneMappingExposure = dark ? 1.05 : 1;
