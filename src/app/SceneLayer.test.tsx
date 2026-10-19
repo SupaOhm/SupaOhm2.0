@@ -34,6 +34,25 @@ describe('SceneLayer', () => {
     vi.restoreAllMocks();
   });
 
+  it('moves the still image with the current state’s stage', () => {
+    vi.mocked(detectSceneMode).mockReturnValue('static');
+    const section = document.createElement('section');
+    section.dataset.anchor = '1';
+    vi.spyOn(section, 'getBoundingClientRect').mockReturnValue({ top: -200 } as DOMRect);
+    document.body.append(section);
+    const { container } = render(<SceneLayer items={SCENE_ITEMS} theme="light" />);
+    act(() => scroll.sample?.({ p: 1.2, exit: 0, dip: 0, arrive: 0 }));
+    const layer = container.querySelector<HTMLElement>('.scene')!;
+    expect(layer.style.getPropertyValue('--stage-y')).toBe(`${stageCentre(-200, window.innerHeight)}px`);
+  });
+
+  it('marks the slot state’s still, which narrow screens hide behind the page’s own phone', () => {
+    vi.mocked(detectSceneMode).mockReturnValue('static');
+    render(<SceneLayer items={SCENE_ITEMS} theme="light" />);
+    act(() => scroll.sample?.({ p: SCENE_ITEMS.length - 1, exit: 0, dip: 0, arrive: 0 }));
+    expect(screen.getByTestId('scene-fallback')).toHaveAttribute('data-slot');
+  });
+
   it("gives the scene each state's stage, read from the page", async () => {
     createScene.mockReturnValue(handle());
     render(<SceneLayer items={SCENE_ITEMS} theme="light" />);

@@ -544,7 +544,7 @@ p {
   white-space: nowrap;
 }
 
-/* narrow: the top 55vh of each object section stays empty for the object */
+/* narrow: the top 55vh of each object section (its stage, STAGE in src/scroll/progress.ts) stays empty for the object */
 @media (max-width: 799px) {
   .topbar {
     padding: 12px 24px;
@@ -615,10 +615,15 @@ p {
 .scene-fallback[data-side='left'] {
   left: 4vw;
 }
+/* narrow: the still sits on its state's stage and scrolls with it (--stage-y, set by SceneLayer); the slot state's
+   still is hidden, since the page draws its own phone in the slot */
 @media (max-width: 799px) {
+  .scene-fallback[data-slot] {
+    display: none;
+  }
   .scene-fallback,
   .scene-fallback[data-side] {
-    top: 27.5vh;
+    top: var(--stage-y, 27.5vh);
     right: auto;
     left: 50%;
     width: min(86vw, 50vh);
