@@ -152,9 +152,10 @@ export function SceneLayer({ items, theme, capture = false }: { items: SceneItem
       }
       handleRef.current?.setActive(activeRef.current);
       if (layerRef.current) layerRef.current.style.opacity = String(1 - s.exit);
-      // the still (shown while loading or without WebGL) sits on its state's stage on narrow screens (styles.css)
+      // the still (shown while loading or without WebGL, or after the scene is lost) sits on its state's stage on narrow
+      // screens (styles.css), so the stage is kept current whatever the status
       const state = clampState(s.p, items.length);
-      const y = statusRef.current === 'ready' ? null : stageY(state, items);
+      const y = stageY(state, items);
       if (layerRef.current && y !== null) layerRef.current.style.setProperty('--stage-y', `${y}px`);
       setFallbackState(state);
     },

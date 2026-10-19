@@ -46,6 +46,22 @@ describe('SceneLayer', () => {
     expect(layer.style.getPropertyValue('--stage-y')).toBe(`${stageCentre(-200, window.innerHeight)}px`);
   });
 
+  it('keeps the still image’s stage current while the scene is ready, for a fall back to the still', async () => {
+    createScene.mockImplementation((_c: HTMLCanvasElement, _i: unknown, o: SceneOptions) => {
+      o.onReady?.();
+      return handle();
+    });
+    const section = document.createElement('section');
+    section.dataset.anchor = '1';
+    vi.spyOn(section, 'getBoundingClientRect').mockReturnValue({ top: -200 } as DOMRect);
+    document.body.append(section);
+    const { container } = render(<SceneLayer items={SCENE_ITEMS} theme="light" />);
+    await waitFor(() => expect(container.querySelector('.scene')).toHaveAttribute('data-status', 'ready'));
+    act(() => scroll.sample?.({ p: 1.2, exit: 0, dip: 0, arrive: 0 }));
+    const layer = container.querySelector<HTMLElement>('.scene')!;
+    expect(layer.style.getPropertyValue('--stage-y')).toBe(`${stageCentre(-200, window.innerHeight)}px`);
+  });
+
   it('marks the slot state’s still, which narrow screens hide behind the page’s own phone', () => {
     vi.mocked(detectSceneMode).mockReturnValue('static');
     render(<SceneLayer items={SCENE_ITEMS} theme="light" />);
