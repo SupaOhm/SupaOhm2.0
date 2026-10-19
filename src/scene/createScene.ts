@@ -190,7 +190,10 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
     // headings sit between sections, clear of every stage, so there is nothing to make room for
     dipNow = still ? dip : dipNow + (dip - dipNow) * (1 - Math.exp(-dt * 10));
     const melt = mode === 'narrow' ? 0 : dipNow;
-    const size = lerp(swell.x * place.fit, fit?.scale ?? 0, settle) * (1 - 0.82 * melt);
+    // narrow: the object changes stage at the middle of the melt, often onto one already on screen, so it shrinks
+    // to nothing there and grows again on its new stage (reduced motion already fades out across the swap)
+    const handover = mode === 'narrow' && !opts.reducedMotion ? smoothstep(Math.abs(2 * s.g - 1), 0, 0.3) : 1;
+    const size = lerp(swell.x * place.fit, fit?.scale ?? 0, settle) * (1 - 0.82 * melt) * handover;
     group.scale.set(size * (1 + stretch), size * (1 - stretch * 0.6), size);
     camera.position.z = camZ;
 
@@ -207,7 +210,8 @@ export function createScene(canvas: HTMLCanvasElement, items: SceneItem[], opts:
       b: wash,
       bar,
       t: opts.reducedMotion ? 0 : t,
-      center: backgroundCenter(group.position.x, group.position.y, camera.position.z),
+      // narrow: the glow stays in the top band; following the object, it would jump at every stage hand-over
+      center: backgroundCenter(group.position.x, mode === 'narrow' ? place.y : group.position.y, camera.position.z),
       bars: opts.lite ? 0 : 1,
     });
     renderer.toneMappingExposure = dark ? 1.05 : 1;
