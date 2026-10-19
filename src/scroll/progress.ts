@@ -9,6 +9,14 @@ export function anchorPoint(top: number, height: number, vh: number, narrow: boo
   return narrow ? top + vh / 2 : top + height / 2;
 }
 
+/** Narrow screens keep this fraction of the viewport height empty at the top of each object section: its stage. */
+export const STAGE = 0.55;
+
+/** Viewport y of the centre of a section's stage, for a section whose top is at viewport y `top`. */
+export function stageCentre(top: number, vh: number): number {
+  return top + (vh * STAGE) / 2;
+}
+
 /** p = k + (y - c_k) / (c_{k+1} - c_k) for c_k ≤ y < c_{k+1}, clamped to [0, n-1]. */
 export function progressFromAnchors(y: number, anchors: number[]): number {
   const n = anchors.length;

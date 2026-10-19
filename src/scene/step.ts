@@ -5,6 +5,8 @@ export interface StepState {
   k: number;
   /** Melt phase within the step, 0..1. */
   g: number;
+  /** The state the object belongs to: k for the first half of the melt, k+1 from the middle on. */
+  near: number;
   wA: number;
   wBlob: number;
   wB: number;
@@ -27,12 +29,12 @@ export function stepState(p: number, n: number, reducedMotion: boolean): StepSta
 
   if (reducedMotion) {
     const after = g >= 0.5;
-    return { k, g, wA: after ? 0 : 1, wBlob: 0, wB: after ? 1 : 0, fade: smoothstep(Math.abs(2 * g - 1), 0, 1), dir };
+    return { k, g, near, wA: after ? 0 : 1, wBlob: 0, wB: after ? 1 : 0, fade: smoothstep(Math.abs(2 * g - 1), 0, 1), dir };
   }
   if (g < 0.5) {
     const e = ease(g / 0.5);
-    return { k, g, wA: 1 - e, wBlob: e, wB: 0, fade: 1, dir };
+    return { k, g, near, wA: 1 - e, wBlob: e, wB: 0, fade: 1, dir };
   }
   const e = ease((g - 0.5) / 0.5);
-  return { k, g, wA: 0, wBlob: 1 - e, wB: e, fade: 1, dir };
+  return { k, g, near, wA: 0, wBlob: 1 - e, wB: e, fade: 1, dir };
 }

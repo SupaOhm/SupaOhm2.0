@@ -49,4 +49,13 @@ describe('stepState', () => {
     expect(mid.fade).toBeCloseTo(0);
     expect(mid.wB).toBe(1);
   });
+
+  it('names the state the object belongs to, switching mid-melt', () => {
+    expect(stepState(2.3, N, false).near).toBe(2);
+    expect(stepState(2.5, N, false).near).toBe(3);
+    expect(stepState(2.7, N, false).near).toBe(3);
+    expect(stepState(6, N, false).near).toBe(6);
+    expect(stepState(2.3, N, true).near).toBe(2);
+    expect(stepState(2.7, N, true).near).toBe(3);
+  });
 });

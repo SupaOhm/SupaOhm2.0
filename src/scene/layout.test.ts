@@ -1,5 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { CAMERA_Z, FOV, fitToSlot, placement, viewSize } from './layout';
+import { stageCentre } from '../scroll/progress';
+import { CAMERA_Z, FOV, fitToSlot, placement, screenToWorldY, viewSize } from './layout';
+
+describe('screenToWorldY', () => {
+  const vh = 844;
+  const half = viewSize(1).h / 2;
+
+  it('maps the top, middle and bottom of the viewport onto the object plane', () => {
+    expect(screenToWorldY(0, vh)).toBeCloseTo(half, 6);
+    expect(screenToWorldY(vh / 2, vh)).toBeCloseTo(0, 6);
+    expect(screenToWorldY(vh, vh)).toBeCloseTo(-half, 6);
+  });
+
+  it('scales with the camera distance', () => {
+    expect(screenToWorldY(0, vh, CAMERA_Z - 1.1)).toBeCloseTo((half * (CAMERA_Z - 1.1)) / CAMERA_Z, 6);
+  });
+
+  it('puts a section at the viewport top where the narrow placement already sits', () => {
+    expect(screenToWorldY(stageCentre(0, vh), vh)).toBeCloseTo(placement(390 / vh, 'narrow').y, 6);
+  });
+});
 
 describe('layout', () => {
   it('computes the visible world size at the object plane', () => {

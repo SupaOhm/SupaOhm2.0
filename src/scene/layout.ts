@@ -13,6 +13,11 @@ export function viewSize(aspect: number, z = CAMERA_Z): { w: number; h: number }
   return { w: h * aspect, h };
 }
 
+/** World y on the object plane (z = 0) of a viewport y (CSS px from the top), for a camera at distance z. */
+export function screenToWorldY(sy: number, vh: number, z = CAMERA_Z): number {
+  return (1 - (2 * sy) / vh) * (viewSize(1, z).h / 2);
+}
+
 export interface Placement {
   /** Horizontal offset; the object sits at dir * side. */
   side: number;
